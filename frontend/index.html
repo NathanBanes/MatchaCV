@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Optimizer - ATS Keyword Optimization</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://www.google.com/recaptcha/api.js" async defer></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <span class="nav-project-name">MatchaCV</span>
+                <div class="nav-logo">
+                    <svg width="20" height="24" viewBox="0 0 20 24" fill="currentColor">
+                        <path d="M10 0L0 6v12l10 6 10-6V6L10 0zm0 2.4l8 4.8v9.6l-8 4.8-8-4.8V7.2l8-4.8z"/>
+                    </svg>
+                </div>
+            </div>
+            <ul class="nav-menu">
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <!-- Left Side - Text Content -->
+            <div class="hero-left">
+                <h1 class="hero-title">RESUME</h1>
+                <h2 class="hero-subtitle-main">Keyword Optimization</h2>
+                <p class="hero-description">Built to pass ATS. Designed to land interviews.</p>
+                <button type="button" class="btn btn-primary" id="getStartedBtn" onclick="handleGetStarted('heroCaptcha', 'heroCaptchaWrapper')">Get Started</button>
+                <div class="captcha-wrapper" id="heroCaptchaWrapper" style="display: none;">
+                    <div id="heroCaptcha"></div>
+                </div>
+            </div>
+            
+            <!-- Center - Paper with Parallax -->
+            <div class="hero-center">
+                <div class="paper-container">
+                    <div class="paper-wrapper">
+                        <div class="paper paper-front">
+                            <div class="paper-content resume-content-front">
+                                <!-- Resume content that fades in -->
+                                <div class="resume-header">
+                                    <h1 class="resume-name">ALEX JOHNSON</h1>
+                                    <div class="resume-contact">
+                                        <span>alex.johnson@email.com</span> • 
+                                        <span>(555) 123-4567</span> • 
+                                        <span>linkedin.com/in/alexjohnson</span> • 
+                                        <span>github.com/alexjohnson</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="resume-section">
+                                    <h2 class="resume-section-title">PROFESSIONAL SUMMARY</h2>
+                                    <p class="resume-text">Experienced Software Engineer with 5+ years of expertise in full-stack development, cloud architecture, and scalable system design. Proven track record of delivering high-performance applications serving millions of users. Specialized in React, Node.js, Python, and AWS infrastructure.</p>
+                                </div>
+                                
+                                <div class="resume-section">
+                                    <h2 class="resume-section-title">TECHNICAL SKILLS</h2>
+                                    <div class="resume-skills">
+                                        <div class="skill-category">
+                                            <strong>Languages:</strong> JavaScript, TypeScript, Python, Java, Go, SQL
+                                        </div>
+                                        <div class="skill-category">
+                                            <strong>Frameworks:</strong> React, Node.js, Express, Django, Spring Boot
+                                        </div>
+                                        <div class="skill-category">
+                                            <strong>Cloud & DevOps:</strong> AWS, Docker, Kubernetes, CI/CD, Terraform
+                                        </div>
+                                        <div class="skill-category">
+                                            <strong>Databases:</strong> PostgreSQL, MongoDB, Redis, DynamoDB
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="resume-section">
+                                    <h2 class="resume-section-title">PROFESSIONAL EXPERIENCE</h2>
+                                    
+                                    <div class="resume-job">
+                                        <div class="job-header">
+                                            <h3 class="job-title">Senior Software Engineer</h3>
+                                            <span class="job-company">TechCorp Inc.</span>
+                                            <span class="job-date">2021 - Present</span>
+                                        </div>
+                                        <ul class="job-bullets">
+                                            <li>Architected and developed microservices handling 10M+ daily requests, reducing latency by 40%</li>
+                                            <li>Led migration to AWS, reducing infrastructure costs by $500K annually</li>
+                                            <li>Mentored team of 5 engineers, improving code quality and deployment velocity</li>
+                                            <li>Built real-time analytics dashboard using React and WebSockets, increasing user engagement by 25%</li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="resume-job">
+                                        <div class="job-header">
+                                            <h3 class="job-title">Software Engineer</h3>
+                                            <span class="job-company">StartupXYZ</span>
+                                            <span class="job-date">2019 - 2021</span>
+                                        </div>
+                                        <ul class="job-bullets">
+                                            <li>Developed RESTful APIs and GraphQL endpoints serving 1M+ users</li>
+                                            <li>Implemented automated testing suite, increasing code coverage from 60% to 95%</li>
+                                            <li>Optimized database queries, reducing page load times by 50%</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div class="resume-section">
+                                    <h2 class="resume-section-title">EDUCATION</h2>
+                                    <div class="resume-education">
+                                        <div class="education-item">
+                                            <strong>Bachelor of Science in Computer Science</strong>
+                                            <span class="education-school">University of Technology</span>
+                                            <span class="education-date">2015 - 2019</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="paper paper-back">
+                            <div class="paper-content resume-content">
+                                <div class="resume-header">
+                                    <h1 class="resume-name">ALEX JOHNSON</h1>
+                                    <div class="resume-contact">
+                                        <span>alex.johnson@email.com</span> • 
+                                        <span>(555) 123-4567</span> • 
+                                        <span>linkedin.com/in/alexjohnson</span> • 
+                                        <span>github.com/alexjohnson</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="resume-section">
+                                    <h2 class="resume-section-title">PROFESSIONAL SUMMARY</h2>
+                                    <p class="resume-text">Experienced Software Engineer with 5+ years of expertise in full-stack development, cloud architecture, and scalable system design. Proven track record of delivering high-performance applications serving millions of users. Specialized in React, Node.js, Python, and AWS infrastructure.</p>
+                                </div>
+                                
+                                <div class="resume-section">
+                                    <h2 class="resume-section-title">TECHNICAL SKILLS</h2>
+                                    <div class="resume-skills">
+                                        <div class="skill-category">
+                                            <strong>Languages:</strong> JavaScript, TypeScript, Python, Java, Go, SQL
+                                        </div>
+                                        <div class="skill-category">
+                                            <strong>Frameworks:</strong> React, Node.js, Express, Django, Spring Boot
+                                        </div>
+                                        <div class="skill-category">
+                                            <strong>Cloud & DevOps:</strong> AWS, Docker, Kubernetes, CI/CD, Terraform
+                                        </div>
+                                        <div class="skill-category">
+                                            <strong>Databases:</strong> PostgreSQL, MongoDB, Redis, DynamoDB
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="resume-section">
+                                    <h2 class="resume-section-title">PROFESSIONAL EXPERIENCE</h2>
+                                    
+                                    <div class="resume-job">
+                                        <div class="job-header">
+                                            <h3 class="job-title">Senior Software Engineer</h3>
+                                            <span class="job-company">TechCorp Inc.</span>
+                                            <span class="job-date">2021 - Present</span>
+                                        </div>
+                                        <ul class="job-bullets">
+                                            <li>Architected and developed microservices handling 10M+ daily requests, reducing latency by 40%</li>
+                                            <li>Led migration to AWS, reducing infrastructure costs by $500K annually</li>
+                                            <li>Mentored team of 5 engineers, improving code quality and deployment velocity</li>
+                                            <li>Built real-time analytics dashboard using React and WebSockets, increasing user engagement by 25%</li>
+                                        </ul>
+                                    </div>
+                                    
+                                    <div class="resume-job">
+                                        <div class="job-header">
+                                            <h3 class="job-title">Software Engineer</h3>
+                                            <span class="job-company">StartupXYZ</span>
+                                            <span class="job-date">2019 - 2021</span>
+                                        </div>
+                                        <ul class="job-bullets">
+                                            <li>Developed RESTful APIs and GraphQL endpoints serving 1M+ users</li>
+                                            <li>Implemented automated testing suite, increasing code coverage from 60% to 95%</li>
+                                            <li>Optimized database queries, reducing page load times by 50%</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div class="resume-section">
+                                    <h2 class="resume-section-title">EDUCATION</h2>
+                                    <div class="resume-education">
+                                        <div class="education-item">
+                                            <strong>Bachelor of Science in Computer Science</strong>
+                                            <span class="education-school">University of Technology</span>
+                                            <span class="education-date">2015 - 2019</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem Statement -->
+    <section class="problem-section">
+        <div class="container">
+            <h2 class="section-title">Solves the problems that hold you back</h2>
+            <div class="problem-grid">
+                <div class="problem-card">
+                    <div class="problem-icon">❌</div>
+                    <h3>ATS Rejection</h3>
+                    <p>Your resume never reaches human eyes because it fails automated screening.</p>
+                </div>
+                <div class="problem-card">
+                    <div class="problem-icon">❌</div>
+                    <h3>Keyword Mismatch</h3>
+                    <p>Missing critical keywords that ATS systems are programmed to find.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why It's Powerful -->
+    <section class="power-section">
+        <div class="container">
+            <div class="power-content">
+                <h2 class="section-title">Why it's powerful</h2>
+                <p class="power-text">You're demonstrating the exact systems companies use internally for resume filtering. This isn't just a tool—it's enterprise architecture in action.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2 class="cta-title">Ready to optimize your resume?</h2>
+            <p class="cta-subtitle">Get past ATS filters and land more interviews.</p>
+            <button type="button" class="btn btn-primary btn-large" id="getStartedFreeBtn" onclick="handleGetStarted('ctaCaptcha', 'ctaCaptchaWrapper')">Get Started Free</button>
+            <div class="captcha-wrapper" id="ctaCaptchaWrapper" style="display: none;">
+                <div id="ctaCaptcha"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Built With Section -->
+    <section class="built-with-section">
+        <div class="container">
+            <h3 class="built-with-title">Built with</h3>
+            <div class="tech-stack">
+                <div class="tech-item">Node.js</div>
+                <div class="tech-item">Express</div>
+                <div class="tech-item">PostgreSQL</div>
+                <div class="tech-item">Redis</div>
+                <div class="tech-item">AWS S3</div>
+                <div class="tech-item">Socket.IO</div>
+                <div class="tech-item">OpenAI</div>
+                <div class="tech-item">JavaScript</div>
+                <div class="tech-item">HTML5</div>
+                <div class="tech-item">CSS3</div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-container">
+        </div>
+        <div class="footer-bottom">
+            <p>Copyright © 2025 Resume Optimizer. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

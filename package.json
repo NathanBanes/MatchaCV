@@ -1,0 +1,13 @@
+{
+  "name": "matchacv-root",
+  "version": "1.0.0",
+  "description": "MatchaCV - Resume ATS Optimization Tool",
+  "scripts": {
+    "start": "cd backend && npm start",
+    "worker": "cd backend && npm run worker"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
+
