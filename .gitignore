@@ -3,3 +3,13 @@ uploads/
 *.log
 .env
 .DS_Store
+
+# Ignore duplicate/backup files (files with " 2" suffix)
+* 2.*
+* 2.js
+* 2.md
+* 2.json
+* 2.sh
+* 2.sql
+* 2.css
+* 2.html
