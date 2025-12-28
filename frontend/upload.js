@@ -25,20 +25,53 @@ document.addEventListener('DOMContentLoaded', function() {
     if (uploadForm) {
         uploadForm.setAttribute('novalidate', '');
         uploadForm.noValidate = true;
+        // Override checkValidity to always return true
+        uploadForm.checkValidity = function() { return true; };
+        // Prevent invalid event from bubbling
+        uploadForm.addEventListener('invalid', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        }, true);
     }
     if (jobUrlInput) {
         jobUrlInput.removeAttribute('required');
         jobUrlInput.removeAttribute('pattern');
         jobUrlInput.required = false;
+        jobUrlInput.setCustomValidity('');
+        jobUrlInput.checkValidity = function() { return true; };
+        jobUrlInput.addEventListener('invalid', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        }, true);
     }
     if (jobPasteInput) {
         jobPasteInput.removeAttribute('required');
         jobPasteInput.removeAttribute('pattern');
         jobPasteInput.required = false;
+        jobPasteInput.setCustomValidity('');
+        jobPasteInput.checkValidity = function() { return true; };
+        jobPasteInput.addEventListener('invalid', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        }, true);
     }
     if (resumeFileInput) {
         resumeFileInput.removeAttribute('required');
         resumeFileInput.required = false;
+        resumeFileInput.setCustomValidity('');
+        resumeFileInput.checkValidity = function() { return true; };
+        resumeFileInput.addEventListener('invalid', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        }, true);
     }
 
     // Toggle between URL and paste text options
@@ -203,12 +236,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (uploadForm) {
         uploadForm.setAttribute('novalidate', '');
         uploadForm.noValidate = true;
+        
         // Prevent any form submission validation
         uploadForm.addEventListener('submit', function(e) {
             e.preventDefault();
             e.stopPropagation();
             handleFormSubmit(e);
         }, false);
+        
+        // Prevent browser validation errors from showing
+        uploadForm.addEventListener('invalid', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }, true);
     }
     
     // Attach handler to button click (bypasses form validation completely)
@@ -216,22 +257,46 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            // Clear any browser validation messages
+            if (uploadForm) {
+                uploadForm.checkValidity = function() { return true; };
+            }
             handleFormSubmit(e);
         }, false);
     }
     
-    // Remove any required attributes that might have been set
+    // Remove any required attributes and disable validation on all inputs
     if (jobUrlInput) {
         jobUrlInput.removeAttribute('required');
+        jobUrlInput.removeAttribute('pattern');
         jobUrlInput.required = false;
+        jobUrlInput.setCustomValidity('');
+        jobUrlInput.addEventListener('invalid', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }, true);
     }
     if (jobPasteInput) {
         jobPasteInput.removeAttribute('required');
+        jobPasteInput.removeAttribute('pattern');
         jobPasteInput.required = false;
+        jobPasteInput.setCustomValidity('');
+        jobPasteInput.addEventListener('invalid', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }, true);
     }
     if (resumeFileInput) {
         resumeFileInput.removeAttribute('required');
         resumeFileInput.required = false;
+        resumeFileInput.setCustomValidity('');
+        resumeFileInput.addEventListener('invalid', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        }, true);
     }
 
     // Helper functions
