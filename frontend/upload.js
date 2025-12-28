@@ -79,20 +79,26 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
-            // Validate URL format if URL is selected
+            // Validate and normalize URL format if URL is selected
             if (isUrlSelected && urlValue) {
+                let normalizedUrl = urlValue.trim();
+                
+                // Auto-add https:// if missing
+                if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+                    normalizedUrl = 'https://' + normalizedUrl;
+                    jobUrlInput.value = normalizedUrl; // Update the input field
+                }
+                
+                // Validate URL format
                 try {
-                    const url = new URL(urlValue);
+                    const url = new URL(normalizedUrl);
                     if (!url.protocol.startsWith('http')) {
                         showError('Please enter a valid URL starting with http:// or https://');
                         return;
                     }
                 } catch (e) {
-                    // If URL parsing fails, try adding https:// prefix
-                    if (!urlValue.startsWith('http://') && !urlValue.startsWith('https://')) {
-                        showError('Please enter a valid URL starting with http:// or https://');
-                        return;
-                    }
+                    showError('Please enter a valid URL (e.g., https://example.com/job-posting)');
+                    return;
                 }
             }
 
