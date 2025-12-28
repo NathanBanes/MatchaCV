@@ -41,12 +41,19 @@ document.addEventListener('DOMContentLoaded', function() {
         jobUrlInput.required = false;
         jobUrlInput.setCustomValidity('');
         jobUrlInput.checkValidity = function() { return true; };
+        jobUrlInput.reportValidity = function() { return true; };
+        // Prevent any validation UI from showing
         jobUrlInput.addEventListener('invalid', function(e) {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
+            this.setCustomValidity('');
             return false;
         }, true);
+        // Also prevent on input/blur events
+        jobUrlInput.addEventListener('blur', function() {
+            this.setCustomValidity('');
+        });
     }
     if (jobPasteInput) {
         jobPasteInput.removeAttribute('required');
@@ -54,22 +61,32 @@ document.addEventListener('DOMContentLoaded', function() {
         jobPasteInput.required = false;
         jobPasteInput.setCustomValidity('');
         jobPasteInput.checkValidity = function() { return true; };
+        jobPasteInput.reportValidity = function() { return true; };
+        // Prevent any validation UI from showing
         jobPasteInput.addEventListener('invalid', function(e) {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
+            this.setCustomValidity('');
             return false;
         }, true);
+        // Also prevent on input/blur events
+        jobPasteInput.addEventListener('blur', function() {
+            this.setCustomValidity('');
+        });
     }
     if (resumeFileInput) {
         resumeFileInput.removeAttribute('required');
         resumeFileInput.required = false;
         resumeFileInput.setCustomValidity('');
         resumeFileInput.checkValidity = function() { return true; };
+        resumeFileInput.reportValidity = function() { return true; };
+        // Prevent any validation UI from showing
         resumeFileInput.addEventListener('invalid', function(e) {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
+            this.setCustomValidity('');
             return false;
         }, true);
     }
@@ -257,18 +274,27 @@ document.addEventListener('DOMContentLoaded', function() {
     if (uploadForm) {
         uploadForm.setAttribute('novalidate', '');
         uploadForm.noValidate = true;
+        uploadForm.checkValidity = function() { return true; };
+        uploadForm.reportValidity = function() { return true; };
         
         // Prevent any form submission validation
         uploadForm.addEventListener('submit', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation();
             handleFormSubmit(e);
         }, false);
         
-        // Prevent browser validation errors from showing
+        // Prevent browser validation errors from showing - catch ALL invalid events
         uploadForm.addEventListener('invalid', function(e) {
             e.preventDefault();
             e.stopPropagation();
+            e.stopImmediatePropagation();
+            if (e.target) {
+                e.target.setCustomValidity('');
+                e.target.checkValidity = function() { return true; };
+                e.target.reportValidity = function() { return true; };
+            }
             return false;
         }, true);
     }
@@ -278,10 +304,29 @@ document.addEventListener('DOMContentLoaded', function() {
         submitBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            // Clear any browser validation messages
+            e.stopImmediatePropagation();
+            
+            // Aggressively disable all validation before submitting
             if (uploadForm) {
                 uploadForm.checkValidity = function() { return true; };
+                uploadForm.reportValidity = function() { return true; };
             }
+            if (jobUrlInput) {
+                jobUrlInput.checkValidity = function() { return true; };
+                jobUrlInput.reportValidity = function() { return true; };
+                jobUrlInput.setCustomValidity('');
+            }
+            if (jobPasteInput) {
+                jobPasteInput.checkValidity = function() { return true; };
+                jobPasteInput.reportValidity = function() { return true; };
+                jobPasteInput.setCustomValidity('');
+            }
+            if (resumeFileInput) {
+                resumeFileInput.checkValidity = function() { return true; };
+                resumeFileInput.reportValidity = function() { return true; };
+                resumeFileInput.setCustomValidity('');
+            }
+            
             handleFormSubmit(e);
         }, false);
     }
