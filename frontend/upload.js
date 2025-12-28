@@ -1,7 +1,14 @@
 // Upload page functionality
 document.addEventListener('DOMContentLoaded', function() {
-    // Helper function to get API base URL (works for both localhost and Railway)
-    const getApiUrl = () => window.location.origin;
+    // Helper function to get API base URL (works for both localhost and production)
+    const getApiUrl = () => {
+        // Use config function if available (from config.js)
+        if (typeof window.getApiUrl === 'function') {
+            return window.getApiUrl();
+        }
+        // Fallback to current origin
+        return window.location.origin;
+    };
     
     const uploadForm = document.getElementById('uploadForm');
     const resumeFileInput = document.getElementById('resumeFile');
@@ -72,6 +79,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            // Validate URL format if URL is selected
+            if (isUrlSelected && urlValue) {
+                try {
+                    const url = new URL(urlValue);
+                    if (!url.protocol.startsWith('http')) {
+                        showError('Please enter a valid URL starting with http:// or https://');
+                        return;
+                    }
+                } catch (e) {
+                    // If URL parsing fails, try adding https:// prefix
+                    if (!urlValue.startsWith('http://') && !urlValue.startsWith('https://')) {
+                        showError('Please enter a valid URL starting with http:// or https://');
+                        return;
+                    }
+                }
+            }
+
             if (!isUrlSelected && !pasteValue) {
                 showError('Please paste the job posting text.');
                 return;
@@ -96,7 +120,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             try {
                 // Call API to upload and get jobId
-                const response = await fetch('/api/analyze', {
+                const apiUrl = getApiUrl();
+                const response = await fetch(`${apiUrl}/api/analyze`, {
                     method: 'POST',
                     body: formData
                 });
@@ -419,13 +444,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Try to get the job data and process it synchronously
                 try {
-                    const jobResponse = await fetch(`/api/job/${jobId}`);
+                    const apiUrl = getApiUrl();
+                    const jobResponse = await fetch(`${apiUrl}/api/job/${jobId}`);
                     if (jobResponse.ok) {
                         const jobData = await jobResponse.json();
                         // If job is still pending, trigger sync processing
                         if (jobData.status === 'pending' || jobData.status === 'processing') {
                             // Call sync endpoint with the same data
-                            const syncResponse = await fetch('/api/analyze-sync', {
+                            const syncResponse = await fetch(`${apiUrl}/api/analyze-sync`, {
                                 method: 'POST',
                                 body: new FormData(uploadForm)
                             });
@@ -448,7 +474,8 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             
             try {
-                const response = await fetch(`/api/job/${jobId}`);
+                const apiUrl = getApiUrl();
+                const response = await fetch(`${apiUrl}/api/job/${jobId}`);
                 if (!response.ok) {
                     throw new Error('Failed to get job status');
                 }
@@ -460,7 +487,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (jobData.status === 'completed') {
                     console.log(`Polling: Job completed! Fetching results...`);
                     // Get results
-                    const resultsResponse = await fetch(`/api/job/${jobId}/results`);
+                    const resultsResponse = await fetch(`${apiUrl}/api/job/${jobId}/results`);
                     if (resultsResponse.ok) {
                         const resultsData = await resultsResponse.json();
                         console.log(`Polling: Results received, displaying...`);
