@@ -181,9 +181,13 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 // Call API to upload and get jobId
                 const apiUrl = getApiUrl();
+                console.log('Calling API:', `${apiUrl}/api/analyze`);
+                
                 const response = await fetch(`${apiUrl}/api/analyze`, {
                     method: 'POST',
-                    body: formData
+                    body: formData,
+                    mode: 'cors',
+                    credentials: 'omit'
                 });
 
                 const data = await response.json();
@@ -222,10 +226,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 // More specific error messages
                 let errorMessage = error.message || 'Failed to analyze resume.';
                 
-                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-                    errorMessage = 'Cannot connect to server. Please make sure the server is running.';
+                console.error('Analysis error details:', {
+                    message: error.message,
+                    name: error.name,
+                    stack: error.stack
+                });
+                
+                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('Load failed')) {
+                    errorMessage = 'Cannot connect to server. Please check:\n1. Backend is running on EC2\n2. Security group allows HTTP traffic\n3. Backend URL is correct: ' + getApiUrl();
                 } else if (error.message.includes('CORS')) {
-                    errorMessage = 'CORS error. Please check server configuration.';
+                    errorMessage = 'CORS error. Please check server CORS configuration allows requests from: ' + window.location.origin;
                 }
                 
                 showError(errorMessage);

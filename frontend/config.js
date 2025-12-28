@@ -1,7 +1,9 @@
 // API Configuration
 const API_CONFIG = {
     // Production backend URL (your EC2 public IP or domain)
-    PRODUCTION_API_URL: 'http://18.218.178.212',
+    // If using Nginx on port 80, use: 'http://18.218.178.212'
+    // If accessing directly, use: 'http://18.218.178.212:3000'
+    PRODUCTION_API_URL: 'http://18.218.178.212:3000',  // Direct access to Node.js
     // Development backend URL
     DEVELOPMENT_API_URL: 'http://localhost:3000'
 };
