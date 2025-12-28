@@ -182,12 +182,23 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Call API to upload and get jobId
                 const apiUrl = getApiUrl();
                 console.log('Calling API:', `${apiUrl}/api/analyze`);
+                console.log('Frontend origin:', window.location.origin);
                 
                 const response = await fetch(`${apiUrl}/api/analyze`, {
                     method: 'POST',
                     body: formData,
                     mode: 'cors',
-                    credentials: 'omit'
+                    credentials: 'omit',
+                    headers: {
+                        // Don't set Content-Type - let browser set it with boundary for FormData
+                    }
+                }).catch(fetchError => {
+                    console.error('Fetch error details:', {
+                        name: fetchError.name,
+                        message: fetchError.message,
+                        stack: fetchError.stack
+                    });
+                    throw fetchError;
                 });
 
                 const data = await response.json();
