@@ -199,10 +199,13 @@ document.addEventListener('DOMContentLoaded', function() {
             try {
                 // Call API to upload and get jobId
                 const apiUrl = getApiUrl();
-                console.log('Calling API:', `${apiUrl}/api/analyze`);
+                // If apiUrl is empty, use relative URL (Vercel will proxy)
+                const fullUrl = apiUrl ? `${apiUrl}/api/analyze` : '/api/analyze';
+                console.log('Calling API:', fullUrl);
                 console.log('Frontend origin:', window.location.origin);
+                console.log('API URL config:', apiUrl);
                 
-                const response = await fetch(`${apiUrl}/api/analyze`, {
+                const response = await fetch(fullUrl, {
                     method: 'POST',
                     body: formData,
                     mode: 'cors',
@@ -218,6 +221,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                     throw fetchError;
                 });
+
+                // Check if response is ok before trying to parse JSON
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    let errorData;
+                    try {
+                        errorData = JSON.parse(errorText);
+                    } catch (e) {
+                        errorData = { error: `Server error: ${response.status} ${response.statusText}`, message: errorText };
+                    }
+                    throw new Error(errorData.error || errorData.message || `Server error: ${response.status}`);
+                }
 
                 const data = await response.json();
                 
@@ -261,8 +276,17 @@ document.addEventListener('DOMContentLoaded', function() {
                     stack: error.stack
                 });
                 
-                if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('Load failed')) {
-                    errorMessage = 'Cannot connect to server. Please check:\n1. Backend is running on EC2\n2. Security group allows HTTP traffic\n3. Backend URL is correct: ' + getApiUrl();
+                // Filter out browser validation errors - don't show them
+                if (error.message && (
+                    error.message.includes('string did not match the expected pattern') ||
+                    error.message.includes('Please fill out this field') ||
+                    error.message.includes('Please match the requested format')
+                )) {
+                    // This is a browser validation error - ignore it and show a generic message
+                    console.warn('Browser validation error caught, ignoring:', error.message);
+                    errorMessage = 'Please check your inputs and try again.';
+                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('Load failed') || error.message.includes('404')) {
+                    errorMessage = 'Cannot connect to server. The backend may not be running or the API endpoint is not available.';
                 } else if (error.message.includes('CORS')) {
                     errorMessage = 'CORS error. Please check server CORS configuration allows requests from: ' + window.location.origin;
                 }
@@ -548,7 +572,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // WebSocket connection and job status handling
     function connectToWebSocket(jobId) {
-        const serverUrl = getApiUrl();
+        const serverUrl = getApiUrl() || window.location.origin;
         
         // Always start polling as a backup, even if WebSocket connects
         startPolling(jobId);
@@ -647,15 +671,27 @@ document.addEventListener('DOMContentLoaded', function() {
                 // Try to get the job data and process it synchronously
                 try {
                     const apiUrl = getApiUrl();
-                    const jobResponse = await fetch(`${apiUrl}/api/job/${jobId}`);
+                    const jobUrl = apiUrl ? `${apiUrl}/api/job/${jobId}` : `/api/job/${jobId}`;
+                    const jobResponse = await fetch(jobUrl);
                     if (jobResponse.ok) {
                         const jobData = await jobResponse.json();
                         // If job is still pending, trigger sync processing
                         if (jobData.status === 'pending' || jobData.status === 'processing') {
                             // Call sync endpoint with the same data
-                            const syncResponse = await fetch(`${apiUrl}/api/analyze-sync`, {
+                            // Recreate FormData since uploadForm is now a div, not a form
+                            const syncFormData = new FormData();
+                            syncFormData.append('resumeFile', resumeFileInput.files[0]);
+                            syncFormData.append('jobPostingType', jobUrlRadio.checked ? 'url' : 'paste');
+                            if (jobUrlRadio.checked) {
+                                syncFormData.append('jobUrl', jobUrlInput.value.trim());
+                            } else {
+                                syncFormData.append('jobPaste', jobPasteInput.value.trim());
+                            }
+                            
+                            const syncUrl = apiUrl ? `${apiUrl}/api/analyze-sync` : '/api/analyze-sync';
+                            const syncResponse = await fetch(syncUrl, {
                                 method: 'POST',
-                                body: new FormData(uploadForm)
+                                body: syncFormData
                             });
                             
                             if (syncResponse.ok) {
@@ -677,7 +713,8 @@ document.addEventListener('DOMContentLoaded', function() {
             
             try {
                 const apiUrl = getApiUrl();
-                const response = await fetch(`${apiUrl}/api/job/${jobId}`);
+                const jobUrl = apiUrl ? `${apiUrl}/api/job/${jobId}` : `/api/job/${jobId}`;
+                const response = await fetch(jobUrl);
                 if (!response.ok) {
                     throw new Error('Failed to get job status');
                 }
@@ -689,7 +726,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (jobData.status === 'completed') {
                     console.log(`Polling: Job completed! Fetching results...`);
                     // Get results
-                    const resultsResponse = await fetch(`${apiUrl}/api/job/${jobId}/results`);
+                    const resultsUrl = apiUrl ? `${apiUrl}/api/job/${jobId}/results` : `/api/job/${jobId}/results`;
+                    const resultsResponse = await fetch(resultsUrl);
                     if (resultsResponse.ok) {
                         const resultsData = await resultsResponse.json();
                         console.log(`Polling: Results received, displaying...`);
