@@ -1,8 +1,7 @@
 {
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "http://18.218.178.212:3000/api/:path*"
+  "functions": {
+    "api/[...path].js": {
+      "maxDuration": 30
     }
-  ]
+  }
 }
