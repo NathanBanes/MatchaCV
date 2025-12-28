@@ -11,8 +11,9 @@ export default async function handler(req, res) {
   }
 
   // Get the path from the catch-all route
-  const path = req.query.path || [];
-  const apiPath = Array.isArray(path) ? path.join('/') : path;
+  // In Vercel, the path segments are in req.query.path as an array
+  const pathSegments = req.query.path || [];
+  const apiPath = Array.isArray(pathSegments) ? pathSegments.join('/') : pathSegments;
   const backendUrl = `http://18.218.178.212:3000/api/${apiPath}`;
   
   // Forward query parameters (excluding 'path')
@@ -22,39 +23,51 @@ export default async function handler(req, res) {
   const fullUrl = queryString ? `${backendUrl}?${queryString}` : backendUrl;
   
   try {
-    // Get raw body for forwarding (needed for FormData)
-    const chunks = [];
-    for await (const chunk of req) {
-      chunks.push(chunk);
-    }
-    const body = Buffer.concat(chunks);
-    
-    // Prepare headers (forward important ones)
+    // Prepare headers (forward important ones, but let fetch handle Content-Type for FormData)
     const headers = {};
-    if (req.headers['content-type']) {
-      headers['Content-Type'] = req.headers['content-type'];
-    }
-    if (req.headers['content-length']) {
-      headers['Content-Length'] = req.headers['content-length'];
-    }
-    if (req.headers.authorization) {
-      headers['Authorization'] = req.headers.authorization;
+    
+    // Forward all headers except host and connection-related ones
+    Object.keys(req.headers).forEach(key => {
+      const lowerKey = key.toLowerCase();
+      if (lowerKey !== 'host' && lowerKey !== 'connection' && lowerKey !== 'content-length') {
+        headers[key] = req.headers[key];
+      }
+    });
+    
+    // For GET/HEAD requests, no body needed
+    let body;
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      // For FormData (multipart), we need to get the raw body
+      // Vercel parses FormData, but we can access raw body via req.body if available
+      // Otherwise, we'll need to reconstruct it
+      if (req.headers['content-type']?.includes('multipart/form-data')) {
+        // For FormData, we need to pass the request stream
+        // But Vercel might have already parsed it, so we'll try to get raw body
+        body = req.body;
+      } else {
+        // For JSON, stringify if it's an object
+        body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
+      }
     }
     
     // Forward the request to the backend
     const response = await fetch(fullUrl, {
       method: req.method,
       headers,
-      body: req.method !== 'GET' && req.method !== 'HEAD' ? body : undefined,
+      body,
     });
     
     const data = await response.text();
     
     // Forward response headers
-    const contentType = response.headers.get('content-type');
-    if (contentType) {
-      res.setHeader('Content-Type', contentType);
-    }
+    response.headers.forEach((value, key) => {
+      // Don't forward some headers that Vercel handles
+      if (key.toLowerCase() !== 'content-encoding' && key.toLowerCase() !== 'transfer-encoding') {
+        res.setHeader(key, value);
+      }
+    });
+    
+    // Add CORS headers
     res.setHeader('Access-Control-Allow-Origin', '*');
     res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -69,4 +82,3 @@ export default async function handler(req, res) {
     });
   }
 }
-
