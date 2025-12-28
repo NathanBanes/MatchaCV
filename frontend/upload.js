@@ -20,6 +20,26 @@ document.addEventListener('DOMContentLoaded', function() {
     const jobUrlInput = document.getElementById('jobUrlInput');
     const jobPasteInput = document.getElementById('jobPasteInput');
     const submitBtn = document.getElementById('submitBtn');
+    
+    // CRITICAL: Disable ALL browser validation immediately
+    if (uploadForm) {
+        uploadForm.setAttribute('novalidate', '');
+        uploadForm.noValidate = true;
+    }
+    if (jobUrlInput) {
+        jobUrlInput.removeAttribute('required');
+        jobUrlInput.removeAttribute('pattern');
+        jobUrlInput.required = false;
+    }
+    if (jobPasteInput) {
+        jobPasteInput.removeAttribute('required');
+        jobPasteInput.removeAttribute('pattern');
+        jobPasteInput.required = false;
+    }
+    if (resumeFileInput) {
+        resumeFileInput.removeAttribute('required');
+        resumeFileInput.required = false;
+    }
 
     // Toggle between URL and paste text options
     if (jobUrlRadio && jobPasteRadio) {
@@ -27,8 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.checked) {
                 urlInputWrapper.style.display = 'block';
                 pasteInputWrapper.style.display = 'none';
-                jobUrlInput.required = true;
-                jobPasteInput.required = false;
+                // Don't set required - we handle validation in JavaScript
                 jobPasteInput.value = ''; // Clear paste input
             }
         });
@@ -37,8 +56,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.checked) {
                 urlInputWrapper.style.display = 'none';
                 pasteInputWrapper.style.display = 'block';
-                jobUrlInput.required = false;
-                jobPasteInput.required = true;
+                // Don't set required - we handle validation in JavaScript
                 jobUrlInput.value = ''; // Clear URL input
             }
         });
@@ -181,16 +199,39 @@ document.addEventListener('DOMContentLoaded', function() {
             }
     }
     
-    // Attach handler to button click (bypasses form validation completely)
-    if (submitBtn) {
-        submitBtn.addEventListener('click', handleFormSubmit);
-    }
-    
-    // Also keep form submit handler as fallback (with novalidate)
+    // Completely disable browser validation
     if (uploadForm) {
         uploadForm.setAttribute('novalidate', '');
         uploadForm.noValidate = true;
-        uploadForm.addEventListener('submit', handleFormSubmit);
+        // Prevent any form submission validation
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleFormSubmit(e);
+        }, false);
+    }
+    
+    // Attach handler to button click (bypasses form validation completely)
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            handleFormSubmit(e);
+        }, false);
+    }
+    
+    // Remove any required attributes that might have been set
+    if (jobUrlInput) {
+        jobUrlInput.removeAttribute('required');
+        jobUrlInput.required = false;
+    }
+    if (jobPasteInput) {
+        jobPasteInput.removeAttribute('required');
+        jobPasteInput.required = false;
+    }
+    if (resumeFileInput) {
+        resumeFileInput.removeAttribute('required');
+        resumeFileInput.required = false;
     }
 
     // Helper functions
