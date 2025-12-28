@@ -10,6 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
         return window.location.origin;
     };
     
+    // Get form container (now a div, not a form element)
     const uploadForm = document.getElementById('uploadForm');
     const resumeFileInput = document.getElementById('resumeFile');
     const fileNameDisplay = document.getElementById('fileNameDisplay');
@@ -270,33 +271,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
     }
     
-    // Completely disable browser validation
+    // No form element = no browser validation! Just ensure inputs don't validate
+    // Since we're using a div instead of form, there's no form validation
+    // But we still need to prevent input-level validation
     if (uploadForm) {
-        uploadForm.setAttribute('novalidate', '');
-        uploadForm.noValidate = true;
-        uploadForm.checkValidity = function() { return true; };
-        uploadForm.reportValidity = function() { return true; };
-        
-        // Prevent any form submission validation
-        uploadForm.addEventListener('submit', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            handleFormSubmit(e);
-        }, false);
-        
-        // Prevent browser validation errors from showing - catch ALL invalid events
-        uploadForm.addEventListener('invalid', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            if (e.target) {
-                e.target.setCustomValidity('');
-                e.target.checkValidity = function() { return true; };
-                e.target.reportValidity = function() { return true; };
-            }
-            return false;
-        }, true);
+        // uploadForm is now a div, not a form, so no form validation methods
+        // Just ensure all inputs inside don't validate
+        const allInputs = uploadForm.querySelectorAll('input, textarea');
+        allInputs.forEach(input => {
+            input.removeAttribute('required');
+            input.removeAttribute('pattern');
+            input.required = false;
+            input.setCustomValidity('');
+            input.checkValidity = function() { return true; };
+            input.reportValidity = function() { return true; };
+            input.addEventListener('invalid', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                this.setCustomValidity('');
+                return false;
+            }, true);
+        });
     }
     
     // Attach handler to button click (bypasses form validation completely)
@@ -307,27 +303,41 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopImmediatePropagation();
             
             // Aggressively disable all validation before submitting
+            // Clear any existing validation messages first
             if (uploadForm) {
-                uploadForm.checkValidity = function() { return true; };
-                uploadForm.reportValidity = function() { return true; };
+                // Clear validation on all inputs
+                try {
+                    uploadForm.querySelectorAll('input, textarea').forEach(input => {
+                        input.setCustomValidity('');
+                        input.checkValidity = function() { return true; };
+                        input.reportValidity = function() { return true; };
+                        try { input.validationMessage = ''; } catch (err) {}
+                    });
+                } catch (err) {}
             }
             if (jobUrlInput) {
                 jobUrlInput.checkValidity = function() { return true; };
                 jobUrlInput.reportValidity = function() { return true; };
                 jobUrlInput.setCustomValidity('');
+                try { jobUrlInput.validationMessage = ''; } catch (err) {}
             }
             if (jobPasteInput) {
                 jobPasteInput.checkValidity = function() { return true; };
                 jobPasteInput.reportValidity = function() { return true; };
                 jobPasteInput.setCustomValidity('');
+                try { jobPasteInput.validationMessage = ''; } catch (err) {}
             }
             if (resumeFileInput) {
                 resumeFileInput.checkValidity = function() { return true; };
                 resumeFileInput.reportValidity = function() { return true; };
                 resumeFileInput.setCustomValidity('');
+                try { resumeFileInput.validationMessage = ''; } catch (err) {}
             }
             
-            handleFormSubmit(e);
+            // Small delay to ensure validation is cleared
+            setTimeout(() => {
+                handleFormSubmit(e);
+            }, 0);
         }, false);
     }
     

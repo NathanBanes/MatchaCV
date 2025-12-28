@@ -34,7 +34,7 @@
                 <p class="upload-subtitle">Get your resume optimized for ATS systems</p>
             </div>
             
-            <form class="upload-form" id="uploadForm" novalidate>
+            <div class="upload-form" id="uploadForm">
                 <!-- Resume Upload Section -->
                 <div class="form-section">
                     <label for="resumeFile" class="form-label">Resume</label>
@@ -61,12 +61,12 @@
 
                     <!-- URL Input -->
                     <div class="job-input-wrapper" id="urlInputWrapper">
-                        <input type="text" id="jobUrlInput" name="jobUrl" class="form-input" placeholder="https://example.com/job-posting">
+                        <input type="text" id="jobUrlInput" name="jobUrl" class="form-input" placeholder="https://example.com/job-posting" autocomplete="off" spellcheck="false">
                     </div>
 
                     <!-- Paste Text Input -->
                     <div class="job-input-wrapper" id="pasteInputWrapper" style="display: none;">
-                        <textarea id="jobPasteInput" name="jobPaste" class="form-textarea" rows="8" placeholder="Paste the job posting text here..."></textarea>
+                        <textarea id="jobPasteInput" name="jobPaste" class="form-textarea" rows="8" placeholder="Paste the job posting text here..." autocomplete="off" spellcheck="false"></textarea>
                     </div>
                 </div>
 
@@ -74,7 +74,7 @@
                 <div class="form-actions">
                     <button type="button" class="btn btn-primary btn-large" id="submitBtn">Analyze Resume</button>
                 </div>
-            </form>
+            </div>
 
             <!-- Loading State -->
             <div id="loadingState" class="loading-state" style="display: none;">
