@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const pasteInputWrapper = document.getElementById('pasteInputWrapper');
     const jobUrlInput = document.getElementById('jobUrlInput');
     const jobPasteInput = document.getElementById('jobPasteInput');
+    const submitBtn = document.getElementById('submitBtn');
 
     // Toggle between URL and paste text options
     if (jobUrlRadio && jobPasteRadio) {
@@ -58,12 +59,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Form submission handler
-    if (uploadForm) {
-        uploadForm.addEventListener('submit', async function(e) {
+    // Form submission handler - use button click instead of form submit to bypass validation
+    async function handleFormSubmit(e) {
+        if (e) {
             e.preventDefault();
-            
-            // Basic validation
+            e.stopPropagation();
+        }
+        
+        // Basic validation
             const file = resumeFileInput.files[0];
             if (!file) {
                 showError('Please select a resume file.');
@@ -176,7 +179,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 showError(errorMessage);
             }
-        });
+    }
+    
+    // Attach handler to button click (bypasses form validation completely)
+    if (submitBtn) {
+        submitBtn.addEventListener('click', handleFormSubmit);
+    }
+    
+    // Also keep form submit handler as fallback (with novalidate)
+    if (uploadForm) {
+        uploadForm.setAttribute('novalidate', '');
+        uploadForm.noValidate = true;
+        uploadForm.addEventListener('submit', handleFormSubmit);
     }
 
     // Helper functions
