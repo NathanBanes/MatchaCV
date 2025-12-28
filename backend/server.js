@@ -32,7 +32,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
     cors: {
-        origin: '*', // In production, specify your frontend URL
+        origin: process.env.FRONTEND_URL || '*', // Use FRONTEND_URL from env or allow all
         methods: ['GET', 'POST']
     }
 });
@@ -40,7 +40,10 @@ const io = new Server(server, {
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true
+}));
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '..', 'frontend'))); // Serve static files from frontend folder
 
