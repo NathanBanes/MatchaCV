@@ -100,9 +100,3 @@ MatchaCV/
 - JavaScript
 - HTML5
 - CSS3
-
-## License
-
-ISC
-# MatchaCV
-# MatchaCV
