@@ -4,15 +4,23 @@ require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
 
 // Create PostgreSQL connection pool
 // For RDS, we need to handle SSL properly - use rejectUnauthorized: false for self-signed certs
-const pool = new Pool({
+// Check if DATABASE_URL contains RDS endpoint or if we're in production
+const isRDS = process.env.DATABASE_URL?.includes('rds.amazonaws.com');
+const isProduction = process.env.NODE_ENV === 'production';
+
+const poolConfig = {
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_URL?.includes('rds.amazonaws.com') 
-        ? { rejectUnauthorized: false } 
-        : false,
     max: 20, // Maximum number of clients in the pool
     idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
     connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
-});
+};
+
+// Apply SSL configuration for RDS or production
+if (isRDS || isProduction) {
+    poolConfig.ssl = { rejectUnauthorized: false };
+}
+
+const pool = new Pool(poolConfig);
 
 // Test connection on startup
 pool.on('connect', () => {
