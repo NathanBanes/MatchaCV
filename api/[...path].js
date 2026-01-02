@@ -23,46 +23,52 @@ export default async function handler(req, res) {
   const fullUrl = queryString ? `${backendUrl}?${queryString}` : backendUrl;
   
   try {
-    // Prepare headers (forward important ones, but let fetch handle Content-Type for FormData)
-    const headers = {};
+    // For Vercel serverless functions, req is a readable stream
+    // We need to collect the body chunks
+    let body;
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      const chunks = [];
+      // Check if req is a stream
+      if (req.readable) {
+        for await (const chunk of req) {
+          chunks.push(chunk);
+        }
+        body = Buffer.concat(chunks);
+      } else if (req.body) {
+        // If body is already parsed (for JSON), use it
+        body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
+      }
+    }
     
-    // Forward all headers except host and connection-related ones
+    // Prepare headers (forward important ones)
+    const headers = {};
     Object.keys(req.headers).forEach(key => {
       const lowerKey = key.toLowerCase();
-      if (lowerKey !== 'host' && lowerKey !== 'connection' && lowerKey !== 'content-length') {
+      // Forward most headers, but skip some that Vercel/Node handles
+      if (lowerKey !== 'host' && 
+          lowerKey !== 'connection' && 
+          lowerKey !== 'transfer-encoding' &&
+          lowerKey !== 'content-encoding') {
         headers[key] = req.headers[key];
       }
     });
-    
-    // For GET/HEAD requests, no body needed
-    let body;
-    if (req.method !== 'GET' && req.method !== 'HEAD') {
-      // For FormData (multipart), we need to get the raw body
-      // Vercel parses FormData, but we can access raw body via req.body if available
-      // Otherwise, we'll need to reconstruct it
-      if (req.headers['content-type']?.includes('multipart/form-data')) {
-        // For FormData, we need to pass the request stream
-        // But Vercel might have already parsed it, so we'll try to get raw body
-        body = req.body;
-      } else {
-        // For JSON, stringify if it's an object
-        body = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
-      }
-    }
     
     // Forward the request to the backend
     const response = await fetch(fullUrl, {
       method: req.method,
       headers,
-      body,
+      body: body,
     });
     
     const data = await response.text();
     
     // Forward response headers
     response.headers.forEach((value, key) => {
+      const lowerKey = key.toLowerCase();
       // Don't forward some headers that Vercel handles
-      if (key.toLowerCase() !== 'content-encoding' && key.toLowerCase() !== 'transfer-encoding') {
+      if (lowerKey !== 'content-encoding' && 
+          lowerKey !== 'transfer-encoding' &&
+          lowerKey !== 'connection') {
         res.setHeader(key, value);
       }
     });
@@ -76,9 +82,17 @@ export default async function handler(req, res) {
     res.status(response.status).send(data);
   } catch (error) {
     console.error('Proxy error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      method: req.method,
+      url: fullUrl,
+      path: apiPath
+    });
     res.status(500).json({ 
       error: 'Proxy error', 
-      message: error.message 
+      message: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
