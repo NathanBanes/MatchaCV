@@ -3,9 +3,12 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '..', '.env') });
 
 // Create PostgreSQL connection pool
+// For RDS, we need to handle SSL properly - use rejectUnauthorized: false for self-signed certs
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: process.env.NODE_ENV === 'production' || process.env.DATABASE_URL?.includes('rds.amazonaws.com') 
+        ? { rejectUnauthorized: false } 
+        : false,
     max: 20, // Maximum number of clients in the pool
     idleTimeoutMillis: 30000, // Close idle clients after 30 seconds
     connectionTimeoutMillis: 2000, // Return an error after 2 seconds if connection could not be established
@@ -18,7 +21,8 @@ pool.on('connect', () => {
 
 pool.on('error', (err) => {
     console.error('Database: Unexpected error on idle client', err);
-    process.exit(-1);
+    // Don't exit - let the app continue running even if DB has issues
+    // process.exit(-1);
 });
 
 /**
