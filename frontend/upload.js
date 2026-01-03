@@ -234,22 +234,22 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // If we have a token, proceed directly
-        const file = resumeFileInput.files[0];
-        const isUrlSelected = jobUrlRadio && jobUrlRadio.checked;
-        const urlValue = jobUrlInput ? jobUrlInput.value.trim() : '';
-        const pasteValue = jobPasteInput ? jobPasteInput.value.trim() : '';
-        
-        actualFormSubmit(e, file, isUrlSelected, urlValue, pasteValue);
+        proceedWithFormSubmission();
     }
     
-    async function actualFormSubmit(e, file, isUrlSelected, urlValue, pasteValue) {
+    function proceedWithFormSubmission() {
         // Basic validation
+        const file = resumeFileInput.files[0];
         if (!file) {
             showError('Please select a resume file.');
             return;
         }
 
-            if (isUrlSelected && !urlValue) {
+        const isUrlSelected = jobUrlRadio && jobUrlRadio.checked;
+        const urlValue = jobUrlInput ? jobUrlInput.value.trim() : '';
+        const pasteValue = jobPasteInput ? jobPasteInput.value.trim() : '';
+
+        if (isUrlSelected && !urlValue) {
                 showError('Please enter a job posting URL.');
                 return;
             }
