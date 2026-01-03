@@ -270,9 +270,9 @@ function loadRecaptchaScript() {
             return;
         }
         
-        // Script not found, create it
+        // Script not found, create it (v3 doesn't need render parameter in URL)
         const script = document.createElement('script');
-        script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+        script.src = 'https://www.google.com/recaptcha/api.js';
         script.async = true;
         script.defer = true;
         
