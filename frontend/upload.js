@@ -129,11 +129,120 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Form submission handler - use button click instead of form submit to bypass validation
+    // reCAPTCHA handling for upload page
+    let uploadCaptchaWidget = null;
+    let uploadCaptchaVerified = false;
+    
+    function onUploadCaptchaSuccess(token) {
+        uploadCaptchaVerified = true;
+        window.recaptchaToken = token;
+        // Hide captcha and proceed with submission
+        const captchaWrapper = document.getElementById('uploadCaptchaWrapper');
+        if (captchaWrapper) {
+            captchaWrapper.style.display = 'none';
+        }
+        // Continue with form submission
+        proceedWithSubmission();
+    }
+    
+    function onUploadCaptchaExpired() {
+        uploadCaptchaVerified = false;
+        window.recaptchaToken = null;
+    }
+    
+    function showUploadCaptcha() {
+        return new Promise((resolve, reject) => {
+            const captchaWrapper = document.getElementById('uploadCaptchaWrapper');
+            const captchaContainer = document.getElementById('uploadCaptcha');
+            
+            if (!captchaWrapper || !captchaContainer) {
+                reject(new Error('reCAPTCHA elements not found'));
+                return;
+            }
+            
+            // Check if grecaptcha is available
+            if (typeof grecaptcha === 'undefined') {
+                // Wait for it to load
+                let attempts = 0;
+                const maxAttempts = 30;
+                const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (typeof grecaptcha !== 'undefined') {
+                        clearInterval(checkInterval);
+                        renderCaptcha();
+                    } else if (attempts >= maxAttempts) {
+                        clearInterval(checkInterval);
+                        reject(new Error('reCAPTCHA script failed to load'));
+                    }
+                }, 100);
+            } else {
+                renderCaptcha();
+            }
+            
+            function renderCaptcha() {
+                try {
+                    if (!uploadCaptchaWidget) {
+                        uploadCaptchaWidget = grecaptcha.render(captchaContainer, {
+                            'sitekey': '6Ldwfz4sAAAAAA_Nv9zTiENK2Q1dhnS0qaDzV13J',
+                            'callback': onUploadCaptchaSuccess,
+                            'expired-callback': onUploadCaptchaExpired
+                        });
+                    } else {
+                        grecaptcha.reset(uploadCaptchaWidget);
+                    }
+                    captchaWrapper.style.display = 'flex';
+                    resolve();
+                } catch (error) {
+                    reject(error);
+                }
+            }
+        });
+    }
+    
+    let pendingSubmission = null;
+    
+    function proceedWithSubmission() {
+        if (pendingSubmission) {
+            pendingSubmission = null;
+            proceedWithFormSubmission();
+        }
+    }
+    
     async function handleFormSubmit(e) {
         if (e) {
             e.preventDefault();
             e.stopPropagation();
         }
+        
+        // Check if we have a valid reCAPTCHA token
+        if (!window.recaptchaToken || !uploadCaptchaVerified) {
+            // Show reCAPTCHA
+            try {
+                await showUploadCaptcha();
+                // Store submission data to proceed after captcha is verified
+                const file = resumeFileInput.files[0];
+                const isUrlSelected = jobUrlRadio && jobUrlRadio.checked;
+                const urlValue = jobUrlInput ? jobUrlInput.value.trim() : '';
+                const pasteValue = jobPasteInput ? jobPasteInput.value.trim() : '';
+                
+                pendingSubmission = { e, file, isUrlSelected, urlValue, pasteValue };
+                return; // Wait for captcha callback
+            } catch (error) {
+                showError('reCAPTCHA failed to load. Please refresh the page and try again.');
+                return;
+            }
+        }
+        
+        // If we have a token, proceed directly
+        const file = resumeFileInput.files[0];
+        const isUrlSelected = jobUrlRadio && jobUrlRadio.checked;
+        const urlValue = jobUrlInput ? jobUrlInput.value.trim() : '';
+        const pasteValue = jobPasteInput ? jobPasteInput.value.trim() : '';
+        
+        actualFormSubmit(e, file, isUrlSelected, urlValue, pasteValue);
+    }
+    
+    async function actualFormSubmit(e, file, isUrlSelected, urlValue, pasteValue) {
             
             // Basic validation
             const file = resumeFileInput.files[0];
