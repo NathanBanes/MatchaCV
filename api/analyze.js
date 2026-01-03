@@ -55,9 +55,6 @@ export default async function handler(req, res) {
       }
     });
     
-    console.log('[Analyze] Forwarding to backend:', backendUrl);
-    console.log('[Analyze] Body length:', body ? body.length : 0);
-    console.log('[Analyze] Content-Type:', headers['content-type']);
     
     // Make request to backend
     const response = await fetch(backendUrl, {

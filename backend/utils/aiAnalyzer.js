@@ -34,9 +34,6 @@ async function generateAISuggestions(resumeText, jobDescription, jobKeywords, cu
         return [];
     }
     
-    console.log('AI Analyzer: Generating AI-powered suggestions...');
-    console.log('AI Analyzer: API Key present (length:', apiKey.length + ')');
-
     // Limit text length to avoid token limits (keep within reasonable bounds)
     const resumePreview = resumeText.substring(0, 3000);
     const jobPreview = jobDescription.substring(0, 2000);
@@ -102,8 +99,6 @@ Return ONLY valid JSON, no other text.`;
         });
 
         const responseText = completion.choices[0].message.content;
-        console.log('AI Analyzer: Raw response length:', responseText.length);
-        console.log('AI Analyzer: Raw response preview:', responseText.substring(0, 200));
         
         let response;
         try {
@@ -119,10 +114,6 @@ Return ONLY valid JSON, no other text.`;
             const validSuggestions = response.suggestions.filter(s => 
                 s.title && s.description && s.action
             );
-            console.log(`AI Analyzer: Generated ${validSuggestions.length} valid AI suggestions out of ${response.suggestions.length} total`);
-            if (validSuggestions.length > 0) {
-                console.log('AI Analyzer: First suggestion title:', validSuggestions[0].title);
-            }
             return validSuggestions;
         }
         

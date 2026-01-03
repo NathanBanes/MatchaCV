@@ -121,7 +121,6 @@ async function generateSuggestions(resumeText, jobKeywords, jobDescription, scor
     
     // Get AI-powered suggestions if API key is available
     try {
-        console.log('Suggestion Generator: Attempting to get AI suggestions...');
         const aiSuggestions = await aiAnalyzer.generateAISuggestions(
             resumeText,
             jobDescription,
@@ -131,11 +130,9 @@ async function generateSuggestions(resumeText, jobKeywords, jobDescription, scor
         
         // Add AI suggestions (they're more personalized, so add them first)
         if (aiSuggestions && aiSuggestions.length > 0) {
-            console.log(`Suggestion Generator: Adding ${aiSuggestions.length} AI suggestions`);
             // Merge AI suggestions with rule-based ones, prioritizing AI
             return [...aiSuggestions, ...suggestions];
         } else {
-            console.log('Suggestion Generator: No AI suggestions returned, using rule-based only');
         }
     } catch (error) {
         console.error('Error getting AI suggestions, using fallback:', error.message);

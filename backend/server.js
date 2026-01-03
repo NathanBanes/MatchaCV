@@ -53,7 +53,6 @@ async function verifyRecaptcha(token) {
         });
         
         if (response.data.success === true) {
-            console.log('reCAPTCHA verification successful');
             return true;
         } else {
             console.warn('reCAPTCHA verification failed:', response.data['error-codes']);

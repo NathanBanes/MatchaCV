@@ -282,8 +282,6 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             e.stopImmediatePropagation();
             
-            console.log('Button clicked, calling handleFormSubmit');
-            console.log('reCAPTCHA token exists:', !!window.recaptchaToken);
             
             // Call handleFormSubmit (it handles everything including reCAPTCHA)
             try {
