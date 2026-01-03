@@ -227,39 +227,67 @@ document.head.appendChild(style);
 
 // reCAPTCHA v3 handling
 const RECAPTCHA_SITE_KEY = '6Ldwfz4sAAAAAA_Nv9zTiENK2Q1dhnS0qaDzV13J';
-let recaptchaReady = false;
 
 // Wait for reCAPTCHA to load
-window.addEventListener('load', () => {
-    if (typeof grecaptcha !== 'undefined') {
-        grecaptcha.ready(() => {
-            recaptchaReady = true;
-            console.log('reCAPTCHA v3 ready');
-        });
-    }
-});
-
-async function executeRecaptcha(action = 'get_started') {
-    if (!recaptchaReady && typeof grecaptcha !== 'undefined') {
-        await new Promise((resolve) => {
+function waitForRecaptcha() {
+    return new Promise((resolve, reject) => {
+        // Check if already loaded
+        if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
             grecaptcha.ready(() => {
-                recaptchaReady = true;
+                console.log('reCAPTCHA v3 ready');
                 resolve();
             });
-        });
-    }
-    
-    if (typeof grecaptcha === 'undefined') {
-        throw new Error('reCAPTCHA not loaded');
-    }
-    
+            return;
+        }
+        
+        // Wait for script to load
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds max wait
+        
+        const checkInterval = setInterval(() => {
+            attempts++;
+            
+            if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
+                clearInterval(checkInterval);
+                grecaptcha.ready(() => {
+                    console.log('reCAPTCHA v3 ready');
+                    resolve();
+                });
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                reject(new Error('reCAPTCHA script failed to load'));
+            }
+        }, 100);
+    });
+}
+
+async function executeRecaptcha(action = 'get_started') {
     try {
+        // Wait for reCAPTCHA to be ready
+        await waitForRecaptcha();
+        
+        if (typeof grecaptcha === 'undefined' || !grecaptcha.execute) {
+            throw new Error('reCAPTCHA API not available');
+        }
+        
+        console.log('Executing reCAPTCHA with action:', action);
         const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action });
+        
+        if (!token) {
+            throw new Error('reCAPTCHA returned empty token');
+        }
+        
         window.recaptchaToken = token; // Store token globally for use in upload page
-        console.log('reCAPTCHA v3 token obtained');
+        console.log('reCAPTCHA v3 token obtained successfully');
         return token;
     } catch (error) {
         console.error('reCAPTCHA execution error:', error);
+        console.error('Error details:', {
+            message: error.message,
+            stack: error.stack,
+            grecaptchaDefined: typeof grecaptcha !== 'undefined',
+            grecaptchaExecute: typeof grecaptcha !== 'undefined' && typeof grecaptcha.execute === 'function'
+        });
         throw error;
     }
 }
@@ -271,16 +299,37 @@ function handleGetStarted(captchaContainerId, wrapperId) {
         wrapper.style.display = 'none';
     }
     
-    // Execute reCAPTCHA v3 and navigate on success
-    executeRecaptcha('get_started')
-        .then((token) => {
-            console.log('reCAPTCHA verified, navigating to upload page');
-            window.location.href = 'upload.html';
-        })
-        .catch((error) => {
-            console.error('reCAPTCHA failed:', error);
-            alert('reCAPTCHA verification failed. Please try again.');
-        });
+    // Show loading state
+    const button = document.getElementById('getStartedBtn') || document.getElementById('getStartedFreeBtn');
+    if (button) {
+        const originalText = button.textContent;
+        button.textContent = 'Verifying...';
+        button.disabled = true;
+        
+        // Execute reCAPTCHA v3 and navigate on success
+        executeRecaptcha('get_started')
+            .then((token) => {
+                console.log('reCAPTCHA verified, navigating to upload page');
+                window.location.href = 'upload.html';
+            })
+            .catch((error) => {
+                console.error('reCAPTCHA failed:', error);
+                button.textContent = originalText;
+                button.disabled = false;
+                alert('reCAPTCHA verification failed: ' + error.message + '\n\nPlease check:\n1. Domain is registered in Google reCAPTCHA\n2. Site key is correct\n3. Try refreshing the page');
+            });
+    } else {
+        // Fallback if button not found
+        executeRecaptcha('get_started')
+            .then((token) => {
+                console.log('reCAPTCHA verified, navigating to upload page');
+                window.location.href = 'upload.html';
+            })
+            .catch((error) => {
+                console.error('reCAPTCHA failed:', error);
+                alert('reCAPTCHA verification failed: ' + error.message);
+            });
+    }
 }
 
 // Button ripple effects
