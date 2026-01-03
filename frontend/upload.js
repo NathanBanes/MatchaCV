@@ -133,6 +133,11 @@ document.addEventListener('DOMContentLoaded', function() {
     let uploadCaptchaWidget = null;
     let uploadCaptchaVerified = false;
     
+    // Check if we already have a token from the index page
+    if (window.recaptchaToken) {
+        uploadCaptchaVerified = true;
+    }
+    
     function onUploadCaptchaSuccess(token) {
         uploadCaptchaVerified = true;
         window.recaptchaToken = token;
@@ -215,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         // Check if we have a valid reCAPTCHA token
-        if (!window.recaptchaToken || !uploadCaptchaVerified) {
+        if (!window.recaptchaToken) {
             // Show reCAPTCHA
             try {
                 await showUploadCaptcha();
@@ -431,10 +436,13 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Attach handler to button click (bypasses form validation completely)
     if (submitBtn) {
-        submitBtn.addEventListener('click', function(e) {
+        submitBtn.addEventListener('click', async function(e) {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
+            
+            // Call handleFormSubmit
+            await handleFormSubmit(e);
             
             // Aggressively disable all validation before submitting
             // Clear any existing validation messages first
