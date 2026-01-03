@@ -202,9 +202,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const apiUrl = getApiUrl();
                 // If apiUrl is empty, use relative URL (Vercel will proxy)
                 const fullUrl = apiUrl ? `${apiUrl}/api/analyze` : '/api/analyze';
-                console.log('Calling API:', fullUrl);
-                console.log('Frontend origin:', window.location.origin);
-                console.log('API URL config:', apiUrl);
                 
                 const response = await fetch(fullUrl, {
                     method: 'POST',
@@ -237,8 +234,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
                 const data = await response.json();
                 
-                // Log the response for debugging
-                console.log('Server response:', data);
                 
                 // Check if response is an error (even if status is 200)
                 if (!response.ok || data.error) {
@@ -253,7 +248,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     connectToWebSocket(data.jobId);
                 } else if (data.score && data.suggestions) {
                     // Sync response - display results directly
-                    console.log('Received synchronous response, displaying results directly');
                     hideLoading();
                     displayResults(data);
                 } else {
@@ -449,7 +443,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function displayResults(data) {
-        console.log('displayResults called with data:', data);
         const resultsSection = document.getElementById('resultsSection');
         if (!resultsSection) {
             console.error('Results section not found!');
@@ -587,24 +580,16 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             socket.on('connect', () => {
-                console.log('WebSocket: Connected');
                 socket.emit('join:job', jobId);
-                console.log('WebSocket: Joined room for job:', jobId);
-            });
-
-            socket.on('joined', (data) => {
-                console.log('WebSocket: Joined room:', data.room);
             });
 
             socket.on('job:status', (data) => {
-                console.log('WebSocket: Job status update:', data);
                 if (data.message) {
                     updateLoadingMessage(data.message);
                 }
             });
 
             socket.on('job:complete', (data) => {
-                console.log('WebSocket: Job completed:', data);
                 if (socket) {
                     socket.disconnect();
                     socket = null;
@@ -640,7 +625,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
 
             socket.on('disconnect', () => {
-                console.log('WebSocket: Disconnected');
+                // WebSocket disconnected
             });
 
         } catch (error) {
@@ -652,7 +637,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Polling fallback if WebSocket fails
     function startPolling(jobId) {
-        console.log('Starting polling for job:', jobId);
         updateLoadingMessage('Analyzing Resume');
         
         let pollCount = 0;
@@ -723,16 +707,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const jobData = await response.json();
                 
-                console.log(`Polling: Job ${jobId} status: ${jobData.status} (poll #${pollCount})`);
-                
                 if (jobData.status === 'completed') {
-                    console.log(`Polling: Job completed! Fetching results...`);
                     // Get results
                     const resultsUrl = apiUrl ? `${apiUrl}/api/job/${jobId}/results` : `/api/job/${jobId}/results`;
                     const resultsResponse = await fetch(resultsUrl);
                     if (resultsResponse.ok) {
                         const resultsData = await resultsResponse.json();
-                        console.log(`Polling: Results received, displaying...`);
                         clearInterval(pollingInterval);
                         pollingInterval = null;
                         if (socket) {
@@ -740,7 +720,6 @@ document.addEventListener('DOMContentLoaded', function() {
                             socket = null;
                         }
                         hideLoading();
-                        console.log('Polling: Results data from API:', resultsData);
                         displayResults({
                             success: true,
                             score: resultsData.score,

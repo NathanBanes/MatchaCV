@@ -1,16 +1,9 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-// Debug: Check if API key is loaded
-console.log('Server: Working directory:', __dirname);
-console.log('Server: Checking environment variables...');
-console.log('Server: OPENAI_API_KEY exists:', !!process.env.OPENAI_API_KEY);
-if (process.env.OPENAI_API_KEY) {
-    console.log('Server: OPENAI_API_KEY length:', process.env.OPENAI_API_KEY.length);
-    console.log('Server: OPENAI_API_KEY starts with:', process.env.OPENAI_API_KEY.substring(0, 15) + '...');
-} else {
-    console.log('Server: WARNING - No OPENAI_API_KEY found!');
-    console.log('Server: Check if .env file exists in:', __dirname);
+// Check if API key is loaded
+if (!process.env.OPENAI_API_KEY) {
+    console.warn('Server: WARNING - No OPENAI_API_KEY found!');
 }
 
 const express = require('express');
@@ -549,44 +542,12 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// Test OpenAI connection endpoint
-app.get('/api/test-ai', async (req, res) => {
-    try {
-        const OpenAI = require('openai');
-        if (!process.env.OPENAI_API_KEY) {
-            return res.json({ error: 'No OPENAI_API_KEY found in environment' });
-        }
-        
-        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [{ role: "user", content: "Say 'AI is working' if you can read this." }],
-            max_tokens: 10
-        });
-        
-        res.json({ 
-            success: true, 
-            message: completion.choices[0].message.content,
-            model: completion.model
-        });
-    } catch (error) {
-        res.json({ 
-            error: 'OpenAI API test failed', 
-            message: error.message,
-            code: error.code,
-            status: error.status
-        });
-    }
-});
-
 // Endpoint for worker to notify server of job completion (triggers Socket.IO emission)
 app.post('/api/job/:jobId/notify-complete', async (req, res) => {
     try {
         const { jobId } = req.params;
         const { results } = req.body;
         
-        console.log(`Server: Received completion notification for job ${jobId}`);
-        console.log(`Server: Results data:`, JSON.stringify(results).substring(0, 200));
         
         // Validate UUID format
         const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -596,9 +557,7 @@ app.post('/api/job/:jobId/notify-complete', async (req, res) => {
         }
         
         // Emit completion event via Socket.IO
-        console.log(`Server: Emitting job:complete to room job:${jobId}`);
         emitJobComplete(jobId, results || {});
-        console.log(`Server: Socket.IO emission completed for job ${jobId}`);
         
         res.json({ success: true, message: 'Notification sent' });
     } catch (error) {
@@ -619,7 +578,6 @@ io.on('connection', (socket) => {
     socket.on('join:job', (jobId) => {
         if (jobId) {
             socket.join(`job:${jobId}`);
-            console.log(`WebSocket: Client ${socket.id} joined room job:${jobId}`);
             socket.emit('joined', { jobId, room: `job:${jobId}` });
         }
     });
@@ -628,12 +586,11 @@ io.on('connection', (socket) => {
     socket.on('leave:job', (jobId) => {
         if (jobId) {
             socket.leave(`job:${jobId}`);
-            console.log(`WebSocket: Client ${socket.id} left room job:${jobId}`);
         }
     });
 
     socket.on('disconnect', () => {
-        console.log('WebSocket: Client disconnected:', socket.id);
+        // Client disconnected
     });
 });
 
@@ -656,16 +613,7 @@ function emitJobComplete(jobId, results) {
         timestamp: new Date().toISOString()
     };
     
-    console.log(`Server: Emitting to room ${room}`);
-    console.log(`Server: Event data:`, JSON.stringify(eventData).substring(0, 300));
-    
-    // Get the number of clients in the room
-    const roomClients = io.sockets.adapter.rooms.get(room);
-    const clientCount = roomClients ? roomClients.size : 0;
-    console.log(`Server: Room ${room} has ${clientCount} client(s)`);
-    
     io.to(room).emit('job:complete', eventData);
-    console.log(`Server: Emitted job:complete event to room ${room}`);
 }
 
 // Background job processor (fallback if worker isn't running)
@@ -709,15 +657,12 @@ async function processPendingJobs() {
             const job = jobsToProcess[0];
             const age = (Date.now() - new Date(job.created_at).getTime()) / 1000;
             
-            console.log(`Background processor: Found job ${job.job_id.substring(0, 8)}... (age: ${Math.round(age)}s, status: ${job.status})`);
-            console.log(`Background processor: Starting to process job ${job.job_id} (worker may not be running)`);
             
             // Prevent processing the same job multiple times
             // Check if job is already being processed by another instance
             const currentStatus = await db.getJob(job.job_id);
             if (currentStatus) {
                 if (currentStatus.status === 'completed' || currentStatus.status === 'failed') {
-                    console.log(`Background processor: Job ${job.job_id} already ${currentStatus.status}, skipping`);
                     isProcessing = false;
                     return;
                 }
@@ -725,11 +670,9 @@ async function processPendingJobs() {
                 if (currentStatus.status === 'processing') {
                     const processingAge = (Date.now() - new Date(currentStatus.updated_at).getTime()) / 1000;
                     if (processingAge < 30) {
-                        console.log(`Background processor: Job ${job.job_id} is being processed (${Math.round(processingAge)}s ago), skipping`);
                         isProcessing = false;
                         return;
                     }
-                    console.log(`Background processor: Job ${job.job_id} stuck in processing for ${Math.round(processingAge)}s, retrying`);
                 }
             }
             
@@ -808,7 +751,6 @@ async function processPendingJobs() {
                     }
                 });
                 
-                console.log(`Background processor: Job ${job.job_id} completed successfully`);
                 processingJobs.delete(job.job_id);
                 // Note: saveResults already updates status to 'completed'
             } catch (error) {
@@ -823,7 +765,6 @@ async function processPendingJobs() {
             // Log every 10th check (every ~10 seconds)
             const logCount = Math.floor(Date.now() / 10000) % 10;
             if (logCount === 0) {
-                console.log('Background processor: No pending jobs to process');
             }
         }
     } catch (error) {
@@ -835,11 +776,9 @@ async function processPendingJobs() {
 }
 
 // Start background processor to handle stuck jobs (runs regardless of worker status)
-console.log('Background processor: Starting (will process stuck jobs)');
-console.log('Background processor: Will check for jobs every 0.5 seconds');
+// Background processor: Starting (will process stuck jobs)
 // Process immediately on startup, then check every 0.5 seconds
 setTimeout(() => {
-    console.log('Background processor: Running initial check...');
     processPendingJobs();
 }, 500); // Wait 0.5 seconds then process
 backgroundProcessorInterval = setInterval(() => {

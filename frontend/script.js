@@ -1,34 +1,3 @@
-// Smooth scroll for navigation links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: 'smooth',
-                block: 'start'
-            });
-        }
-    });
-});
-
-// Tab switching for architecture section
-const tabButtons = document.querySelectorAll('.tab-btn');
-const tabContents = document.querySelectorAll('.arch-tab-content');
-
-tabButtons.forEach(button => {
-    button.addEventListener('click', () => {
-        const targetTab = button.getAttribute('data-tab');
-        
-        // Remove active class from all buttons and contents
-        tabButtons.forEach(btn => btn.classList.remove('active'));
-        tabContents.forEach(content => content.classList.remove('active'));
-        
-        // Add active class to clicked button and corresponding content
-        button.classList.add('active');
-        document.getElementById(targetTab).classList.add('active');
-    });
-});
 
 // Navbar background on scroll
 const navbar = document.querySelector('.navbar');
@@ -64,7 +33,7 @@ const observer = new IntersectionObserver((entries) => {
 }, observerOptions);
 
 // Observe all cards and sections
-document.querySelectorAll('.problem-card, .feature-card, .arch-item').forEach(el => {
+document.querySelectorAll('.problem-card, .feature-card').forEach(el => {
     el.style.opacity = '0';
     el.style.transform = 'translateY(20px)';
     el.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
@@ -82,20 +51,6 @@ document.querySelectorAll('.btn').forEach(button => {
     });
 });
 
-// Smooth reveal for hero content
-window.addEventListener('load', () => {
-    const heroContent = document.querySelector('.hero-content');
-    if (heroContent) {
-        heroContent.style.opacity = '0';
-        heroContent.style.transform = 'translateY(30px)';
-        heroContent.style.transition = 'opacity 1s ease-out, transform 1s ease-out';
-        
-        setTimeout(() => {
-            heroContent.style.opacity = '1';
-            heroContent.style.transform = 'translateY(0)';
-        }, 100);
-    }
-});
 
 // Paper rotation animation with resume reveal
 const paperContainer = document.querySelector('.paper-container');
@@ -238,7 +193,6 @@ function waitForRecaptcha() {
         // Check if already loaded
         if (typeof grecaptcha !== 'undefined') {
             recaptchaReady = true;
-            console.log('reCAPTCHA already loaded');
             resolve();
             return;
         }
@@ -253,12 +207,9 @@ function waitForRecaptcha() {
         
         // Check if script has loaded but grecaptcha not available
         scriptTag.addEventListener('load', () => {
-            console.log('reCAPTCHA script tag loaded');
-            // Give it a moment to initialize
             setTimeout(() => {
                 if (typeof grecaptcha !== 'undefined') {
                     recaptchaReady = true;
-                    console.log('reCAPTCHA API available');
                     resolve();
                 }
             }, 500);
@@ -282,7 +233,6 @@ function waitForRecaptcha() {
                     resolved = true;
                     clearInterval(checkInterval);
                     recaptchaReady = true;
-                    console.log('reCAPTCHA loaded (polling)');
                     resolve();
                 }
             } else if (attempts >= maxAttempts) {
@@ -302,7 +252,6 @@ function waitForRecaptcha() {
 function onCaptchaSuccess(token, captchaId) {
     captchaVerified[captchaId] = true;
     window.recaptchaToken = token; // Store token globally for use in upload page
-    console.log('reCAPTCHA verified for:', captchaId);
     // Navigate after successful verification
     setTimeout(() => {
         window.location.href = 'upload.html';
@@ -312,7 +261,6 @@ function onCaptchaSuccess(token, captchaId) {
 function onCaptchaExpired(captchaId) {
     captchaVerified[captchaId] = false;
     window.recaptchaToken = null; // Clear token on expiration
-    console.log('reCAPTCHA expired for:', captchaId);
 }
 
 async function handleGetStarted(captchaContainerId, wrapperId) {
@@ -341,9 +289,7 @@ async function handleGetStarted(captchaContainerId, wrapperId) {
         }
         
         try {
-            console.log('Waiting for reCAPTCHA to load...');
             await waitForRecaptcha();
-            console.log('reCAPTCHA loaded successfully');
             if (button) {
                 button.textContent = originalText;
                 button.disabled = false;
@@ -381,7 +327,6 @@ async function handleGetStarted(captchaContainerId, wrapperId) {
                     onCaptchaExpired(captchaContainerId);
                 }
             });
-            console.log('reCAPTCHA widget created for:', captchaContainerId);
         } catch (error) {
             console.error('Error rendering reCAPTCHA:', error);
             alert('Error loading captcha: ' + error.message + '\n\nPlease refresh the page.');
