@@ -296,17 +296,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Remove any required attributes and disable validation on all inputs
-    if (jobUrlInput) {
-        jobUrlInput.removeAttribute('required');
-        jobUrlInput.removeAttribute('pattern');
-        jobUrlInput.required = false;
-        jobUrlInput.setCustomValidity('');
-        jobUrlInput.addEventListener('invalid', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        }, true);
-    }
     if (jobPasteInput) {
         jobPasteInput.removeAttribute('required');
         jobPasteInput.removeAttribute('pattern');
