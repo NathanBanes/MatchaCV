@@ -131,15 +131,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form submission handler - use button click instead of form submit to bypass validation
     // reCAPTCHA handling for upload page
     let uploadCaptchaWidget = null;
-    let uploadCaptchaVerified = false;
     
     // Check if we already have a token from the index page
-    if (window.recaptchaToken) {
-        uploadCaptchaVerified = true;
-    }
+    // If token exists, we're good to go - no need to verify again
     
     function onUploadCaptchaSuccess(token) {
-        uploadCaptchaVerified = true;
         window.recaptchaToken = token;
         // Hide captcha and proceed with submission
         const captchaWrapper = document.getElementById('uploadCaptchaWrapper');
@@ -151,7 +147,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function onUploadCaptchaExpired() {
-        uploadCaptchaVerified = false;
         window.recaptchaToken = null;
     }
     
@@ -219,26 +214,17 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
         }
         
-        // Check if we have a valid reCAPTCHA token
+        // Check if we have a valid reCAPTCHA token from the home page
         if (!window.recaptchaToken) {
-            // Show reCAPTCHA
-            try {
-                await showUploadCaptcha();
-                // Store submission data to proceed after captcha is verified
-                const file = resumeFileInput.files[0];
-                const isUrlSelected = jobUrlRadio && jobUrlRadio.checked;
-                const urlValue = jobUrlInput ? jobUrlInput.value.trim() : '';
-                const pasteValue = jobPasteInput ? jobPasteInput.value.trim() : '';
-                
-                pendingSubmission = { e, file, isUrlSelected, urlValue, pasteValue };
-                return; // Wait for captcha callback
-            } catch (error) {
-                showError('reCAPTCHA failed to load. Please refresh the page and try again.');
-                return;
-            }
+            // No token - redirect back to home page to verify
+            showError('Please verify reCAPTCHA on the home page first. Redirecting...');
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 2000);
+            return;
         }
         
-        // If we have a token, proceed directly
+        // If we have a token, proceed directly with form submission
         proceedWithFormSubmission();
     }
     
