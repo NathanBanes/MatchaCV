@@ -227,192 +227,73 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// reCAPTCHA v3 handling
-const RECAPTCHA_SITE_KEY = '6Ldwfz4sAAAAAA_Nv9zTiENK2Q1dhnS0qaDzV13J';
+// reCAPTCHA v2 handling (Checkbox)
+let captchaWidgets = {};
+let captchaVerified = {};
 
-// Load reCAPTCHA script dynamically if not already loaded
-function loadRecaptchaScript() {
-    return new Promise((resolve, reject) => {
-        // Check if script is already in the DOM
-        const existingScript = document.querySelector('script[src*="recaptcha/api.js"]');
-        
-        if (existingScript) {
-            // Script tag exists, wait for it to load
-            if (typeof grecaptcha !== 'undefined') {
-                resolve();
-                return;
-            }
-            
-            // Wait for script to execute
-            existingScript.onload = () => {
-                if (typeof grecaptcha !== 'undefined') {
-                    resolve();
-                } else {
-                    reject(new Error('reCAPTCHA script loaded but API not available'));
-                }
-            };
-            
-            existingScript.onerror = () => {
-                reject(new Error('reCAPTCHA script failed to load from Google'));
-            };
-            
-            // If script already loaded but grecaptcha not available, wait a bit
-            let attempts = 0;
-            const checkInterval = setInterval(() => {
-                attempts++;
-                if (typeof grecaptcha !== 'undefined') {
-                    clearInterval(checkInterval);
-                    resolve();
-                } else if (attempts >= 30) {
-                    clearInterval(checkInterval);
-                    reject(new Error('reCAPTCHA script loaded but API not initialized'));
-                }
-            }, 100);
-            
-            return;
-        }
-        
-        // Script not found, create it (v3 needs render parameter with site key)
-        const script = document.createElement('script');
-        script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
-        script.async = true;
-        script.defer = true;
-        
-        script.onload = () => {
-            if (typeof grecaptcha !== 'undefined') {
-                resolve();
-            } else {
-                // Wait a bit for grecaptcha to initialize
-                setTimeout(() => {
-                    if (typeof grecaptcha !== 'undefined') {
-                        resolve();
-                    } else {
-                        reject(new Error('reCAPTCHA script loaded but API not available'));
-                    }
-                }, 500);
-            }
-        };
-        
-        script.onerror = () => {
-            reject(new Error('Failed to load reCAPTCHA script. Check network connection and CSP headers.'));
-        };
-        
-        document.head.appendChild(script);
-    });
+function onCaptchaSuccess(token, captchaId) {
+    captchaVerified[captchaId] = true;
+    window.recaptchaToken = token; // Store token globally for use in upload page
+    console.log('reCAPTCHA verified for:', captchaId);
+    // Navigate after successful verification
+    setTimeout(() => {
+        window.location.href = 'upload.html';
+    }, 100);
 }
 
-// Wait for reCAPTCHA to load
-function waitForRecaptcha() {
-    return new Promise((resolve, reject) => {
-        // Check if already loaded
-        if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
-            grecaptcha.ready(() => {
-                console.log('reCAPTCHA v3 ready');
-                resolve();
-            });
-            return;
-        }
-        
-        // Try to load the script
-        loadRecaptchaScript()
-            .then(() => {
-                // Script loaded, now wait for ready
-                if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
-                    grecaptcha.ready(() => {
-                        console.log('reCAPTCHA v3 ready');
-                        resolve();
-                    });
-                } else {
-                    // Wait a bit more
-                    let attempts = 0;
-                    const maxAttempts = 20;
-                    const checkInterval = setInterval(() => {
-                        attempts++;
-                        if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
-                            clearInterval(checkInterval);
-                            grecaptcha.ready(() => {
-                                console.log('reCAPTCHA v3 ready');
-                                resolve();
-                            });
-                        } else if (attempts >= maxAttempts) {
-                            clearInterval(checkInterval);
-                            reject(new Error('reCAPTCHA API not available after script load'));
-                        }
-                    }, 100);
-                }
-            })
-            .catch(reject);
-    });
-}
-
-async function executeRecaptcha(action = 'get_started') {
-    try {
-        // Wait for reCAPTCHA to be ready
-        await waitForRecaptcha();
-        
-        if (typeof grecaptcha === 'undefined' || !grecaptcha.execute) {
-            throw new Error('reCAPTCHA API not available');
-        }
-        
-        console.log('Executing reCAPTCHA with action:', action);
-        const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action });
-        
-        if (!token) {
-            throw new Error('reCAPTCHA returned empty token');
-        }
-        
-        window.recaptchaToken = token; // Store token globally for use in upload page
-        console.log('reCAPTCHA v3 token obtained successfully');
-        return token;
-    } catch (error) {
-        console.error('reCAPTCHA execution error:', error);
-        console.error('Error details:', {
-            message: error.message,
-            stack: error.stack,
-            grecaptchaDefined: typeof grecaptcha !== 'undefined',
-            grecaptchaExecute: typeof grecaptcha !== 'undefined' && typeof grecaptcha.execute === 'function'
-        });
-        throw error;
-    }
+function onCaptchaExpired(captchaId) {
+    captchaVerified[captchaId] = false;
+    window.recaptchaToken = null; // Clear token on expiration
+    console.log('reCAPTCHA expired for:', captchaId);
 }
 
 function handleGetStarted(captchaContainerId, wrapperId) {
-    // Hide the wrapper (v3 doesn't need a visible widget)
     const wrapper = document.getElementById(wrapperId);
-    if (wrapper) {
-        wrapper.style.display = 'none';
+    const container = document.getElementById(captchaContainerId);
+    
+    if (!wrapper || !container) {
+        console.error('Captcha elements not found');
+        return;
     }
     
-    // Show loading state
-    const button = document.getElementById('getStartedBtn') || document.getElementById('getStartedFreeBtn');
-    if (button) {
-        const originalText = button.textContent;
-        button.textContent = 'Verifying...';
-        button.disabled = true;
-        
-        // Execute reCAPTCHA v3 and navigate on success
-        executeRecaptcha('get_started')
-            .then((token) => {
-                console.log('reCAPTCHA verified, navigating to upload page');
-                window.location.href = 'upload.html';
-            })
-            .catch((error) => {
-                console.error('reCAPTCHA failed:', error);
-                button.textContent = originalText;
-                button.disabled = false;
-                alert('reCAPTCHA verification failed: ' + error.message + '\n\nPlease check:\n1. Domain is registered in Google reCAPTCHA\n2. Site key is correct\n3. Try refreshing the page');
+    // If captcha is already verified, navigate immediately
+    if (captchaVerified[captchaContainerId]) {
+        window.location.href = 'upload.html';
+        return;
+    }
+    
+    // Check if grecaptcha is loaded
+    if (typeof grecaptcha === 'undefined') {
+        console.error('reCAPTCHA not loaded yet');
+        alert('Please wait for the page to fully load.');
+        return;
+    }
+    
+    // Show the wrapper
+    wrapper.style.display = 'flex';
+    
+    // If captcha widget doesn't exist, create it
+    if (!captchaWidgets[captchaContainerId]) {
+        try {
+            captchaWidgets[captchaContainerId] = grecaptcha.render(container, {
+                'sitekey': '6Ldwfz4sAAAAAA_Nv9zTiENK2Q1dhnS0qaDzV13J',
+                'callback': function(token) {
+                    onCaptchaSuccess(token, captchaContainerId);
+                },
+                'expired-callback': function() {
+                    onCaptchaExpired(captchaContainerId);
+                }
             });
+            console.log('reCAPTCHA widget created for:', captchaContainerId);
+        } catch (error) {
+            console.error('Error rendering reCAPTCHA:', error);
+            alert('Error loading captcha. Please refresh the page.');
+        }
     } else {
-        // Fallback if button not found
-        executeRecaptcha('get_started')
-            .then((token) => {
-                console.log('reCAPTCHA verified, navigating to upload page');
-                window.location.href = 'upload.html';
-            })
-            .catch((error) => {
-                console.error('reCAPTCHA failed:', error);
-                alert('reCAPTCHA verification failed: ' + error.message);
-            });
+        // If widget exists but not verified, show it and reset if needed
+        if (!captchaVerified[captchaContainerId]) {
+            grecaptcha.reset(captchaWidgets[captchaContainerId]);
+        }
     }
 }
 
