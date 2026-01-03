@@ -6,50 +6,108 @@ const cheerio = require('cheerio');
  */
 async function extractFromUrl(url) {
     try {
-        const response = await axios.get(url, {
+        // Validate URL format
+        if (!url || typeof url !== 'string') {
+            throw new Error('Invalid URL provided');
+        }
+        
+        // Ensure URL has protocol
+        let fullUrl = url.trim();
+        if (!fullUrl.startsWith('http://') && !fullUrl.startsWith('https://')) {
+            fullUrl = 'https://' + fullUrl;
+        }
+        
+        const response = await axios.get(fullUrl, {
             headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Cache-Control': 'max-age=0'
             },
-            timeout: 10000
+            timeout: 15000, // Increased timeout to 15 seconds
+            maxRedirects: 5,
+            validateStatus: function (status) {
+                return status >= 200 && status < 400; // Accept redirects
+            }
         });
         
         const $ = cheerio.load(response.data);
         
-        // Remove script and style elements
-        $('script, style').remove();
+        // Remove script, style, and other non-content elements
+        $('script, style, nav, header, footer, aside, .nav, .header, .footer, .sidebar, .menu').remove();
         
-        // Try to find job description in common selectors
+        // Try to find job description in common selectors (expanded list)
         let jobText = '';
         const selectors = [
+            // Workable-specific
             '[class*="job-description"]',
             '[class*="job-details"]',
+            '[class*="job-content"]',
+            '[data-testid*="job"]',
+            // Generic job board selectors
             '[class*="description"]',
             '[id*="job-description"]',
             '[id*="description"]',
+            '[id*="job-details"]',
+            '[class*="job-posting"]',
+            '[class*="posting"]',
+            // Common content containers
             'article',
             '.content',
-            'main'
+            '.main-content',
+            'main',
+            '[role="main"]',
+            '.job-content',
+            '.posting-content'
         ];
         
         for (const selector of selectors) {
             const element = $(selector).first();
-            if (element.length && element.text().trim().length > 200) {
-                jobText = element.text().trim();
-                break;
+            if (element.length) {
+                const text = element.text().trim();
+                // Check if we found substantial content (at least 200 chars)
+                if (text.length > 200) {
+                    jobText = text;
+                    break;
+                }
             }
         }
         
         // Fallback to body text if no specific selector found
         if (!jobText || jobText.length < 200) {
+            // Remove common noise elements before extracting body text
+            $('.cookie-banner, .popup, .modal, .overlay, .advertisement, .ad, [class*="cookie"], [class*="popup"], [class*="modal"]').remove();
             jobText = $('body').text().trim();
         }
         
-        if (!jobText || jobText.trim().length < 50) {
-            throw new Error('Could not extract sufficient content from the URL. Please try pasting the job description text instead.');
+        // Clean up the text (remove excessive whitespace)
+        jobText = jobText.replace(/\s+/g, ' ').trim();
+        
+        if (!jobText || jobText.length < 50) {
+            throw new Error('Could not extract sufficient content from the URL. The page may require JavaScript to load content, or the job description may not be publicly accessible. Please try pasting the job description text instead.');
         }
         
         return jobText;
     } catch (error) {
+        // Handle specific error types
+        if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND') {
+            throw new Error(`Cannot connect to the URL. Please check that the URL is correct and accessible. Error: ${error.message}`);
+        }
+        if (error.code === 'ETIMEDOUT' || error.message.includes('timeout')) {
+            throw new Error(`Request timed out while fetching the URL. The website may be slow or blocking requests. Please try pasting the job description text instead.`);
+        }
+        if (error.response && error.response.status === 403) {
+            throw new Error(`Access denied (403). The website may be blocking automated requests. Please try pasting the job description text instead.`);
+        }
+        if (error.response && error.response.status === 404) {
+            throw new Error(`Page not found (404). Please check that the URL is correct.`);
+        }
         if (error.message.includes('Could not extract')) {
             throw error;
         }
