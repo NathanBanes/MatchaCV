@@ -225,73 +225,62 @@ style.textContent = `
 `;
 document.head.appendChild(style);
 
-// reCAPTCHA handling
-let captchaWidgets = {};
-let captchaVerified = {};
+// reCAPTCHA v3 handling
+const RECAPTCHA_SITE_KEY = '6Ldwfz4sAAAAAA_Nv9zTiENK2Q1dhnS0qaDzV13J';
+let recaptchaReady = false;
 
-function onCaptchaSuccess(token, captchaId) {
-    captchaVerified[captchaId] = true;
-    window.recaptchaToken = token; // Store token globally for use in upload page
-    console.log('reCAPTCHA verified for:', captchaId);
-    // Navigate after successful verification
-    setTimeout(() => {
-        window.location.href = 'upload.html';
-    }, 100);
-}
+// Wait for reCAPTCHA to load
+window.addEventListener('load', () => {
+    if (typeof grecaptcha !== 'undefined') {
+        grecaptcha.ready(() => {
+            recaptchaReady = true;
+            console.log('reCAPTCHA v3 ready');
+        });
+    }
+});
 
-function onCaptchaExpired(captchaId) {
-    captchaVerified[captchaId] = false;
-    console.log('reCAPTCHA expired for:', captchaId);
+async function executeRecaptcha(action = 'get_started') {
+    if (!recaptchaReady && typeof grecaptcha !== 'undefined') {
+        await new Promise((resolve) => {
+            grecaptcha.ready(() => {
+                recaptchaReady = true;
+                resolve();
+            });
+        });
+    }
+    
+    if (typeof grecaptcha === 'undefined') {
+        throw new Error('reCAPTCHA not loaded');
+    }
+    
+    try {
+        const token = await grecaptcha.execute(RECAPTCHA_SITE_KEY, { action });
+        window.recaptchaToken = token; // Store token globally for use in upload page
+        console.log('reCAPTCHA v3 token obtained');
+        return token;
+    } catch (error) {
+        console.error('reCAPTCHA execution error:', error);
+        throw error;
+    }
 }
 
 function handleGetStarted(captchaContainerId, wrapperId) {
+    // Hide the wrapper (v3 doesn't need a visible widget)
     const wrapper = document.getElementById(wrapperId);
-    const container = document.getElementById(captchaContainerId);
-    
-    if (!wrapper || !container) {
-        console.error('Captcha elements not found');
-        return;
+    if (wrapper) {
+        wrapper.style.display = 'none';
     }
     
-    // If captcha is already verified, navigate immediately
-    if (captchaVerified[captchaContainerId]) {
-        window.location.href = 'upload.html';
-        return;
-    }
-    
-    // Check if grecaptcha is loaded
-    if (typeof grecaptcha === 'undefined') {
-        console.error('reCAPTCHA not loaded yet');
-        alert('Please wait for the page to fully load.');
-        return;
-    }
-    
-    // Show the wrapper
-    wrapper.style.display = 'flex';
-    
-    // If captcha widget doesn't exist, create it
-    if (!captchaWidgets[captchaContainerId]) {
-        try {
-            captchaWidgets[captchaContainerId] = grecaptcha.render(container, {
-                'sitekey': '6LdZfT4sAAAAADnu-2F2xDX5u5KkKWH8cWILbbiU', // TODO: Replace with your actual reCAPTCHA site key from Google
-                'callback': function(token) {
-                    onCaptchaSuccess(token, captchaContainerId);
-                },
-                'expired-callback': function() {
-                    onCaptchaExpired(captchaContainerId);
-                }
-            });
-            console.log('reCAPTCHA widget created for:', captchaContainerId);
-        } catch (error) {
-            console.error('Error rendering reCAPTCHA:', error);
-            alert('Error loading captcha. Please refresh the page.');
-        }
-    } else {
-        // If widget exists but not verified, show it and reset if needed
-        if (!captchaVerified[captchaContainerId]) {
-            grecaptcha.reset(captchaWidgets[captchaContainerId]);
-        }
-    }
+    // Execute reCAPTCHA v3 and navigate on success
+    executeRecaptcha('get_started')
+        .then((token) => {
+            console.log('reCAPTCHA verified, navigating to upload page');
+            window.location.href = 'upload.html';
+        })
+        .catch((error) => {
+            console.error('reCAPTCHA failed:', error);
+            alert('reCAPTCHA verification failed. Please try again.');
+        });
 }
 
 // Button ripple effects
