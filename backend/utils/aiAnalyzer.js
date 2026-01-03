@@ -42,7 +42,7 @@ async function generateAISuggestions(resumeText, jobDescription, jobKeywords, cu
     const jobPreview = jobDescription.substring(0, 2000);
     const technicalKeywords = jobKeywords.technical.slice(0, 20).join(', ');
 
-    const prompt = `You are an expert resume and ATS optimization consultant. Analyze the following resume and job description to provide specific, actionable suggestions.
+    const prompt = `You are an expert resume and job description analyzer for software engineering, software developmemt, data science, machine learning, and AI. Analyze the following resume and job description to provide specific suggestions to their resume and to give actionable suggestions to better their chance to pass the ATS.'
 
 RESUME TEXT:
 ${resumePreview}
