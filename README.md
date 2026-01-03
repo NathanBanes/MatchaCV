@@ -58,14 +58,12 @@ MatchaCV/
 
 3. **Setup Database**
    ```bash
-   cd backend
-   npm run setup-db
+   node backend/scripts/setup-database.js
    ```
 
 4. **Setup Redis**
    ```bash
-   cd backend
-   npm run setup-redis
+   bash backend/scripts/setup-redis.sh
    ```
 
 5. **Start the Server**

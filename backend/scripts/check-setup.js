@@ -36,7 +36,7 @@ function checkCommand(command) {
 }
 
 function checkEnvFile() {
-    const envPath = path.join(__dirname, '..', '.env');
+    const envPath = path.join(__dirname, '..', '..', '.env');
     if (!fs.existsSync(envPath)) {
         return { exists: false, vars: {} };
     }

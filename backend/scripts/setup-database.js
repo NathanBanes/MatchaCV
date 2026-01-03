@@ -81,7 +81,7 @@ async function setupDatabase() {
 
         // Run schema
         console.log('\n2️⃣  Running schema...');
-        const schemaPath = path.join(__dirname, '..', 'backend', 'database', 'schema.sql');
+        const schemaPath = path.join(__dirname, '..', 'database', 'schema.sql');
         
         if (!fs.existsSync(schemaPath)) {
             throw new Error(`Schema file not found: ${schemaPath}`);
