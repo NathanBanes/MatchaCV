@@ -243,17 +243,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     async function actualFormSubmit(e, file, isUrlSelected, urlValue, pasteValue) {
-            
-            // Basic validation
-            const file = resumeFileInput.files[0];
-            if (!file) {
-                showError('Please select a resume file.');
-                return;
-            }
-
-            const isUrlSelected = jobUrlRadio.checked;
-            const urlValue = jobUrlInput.value.trim();
-            const pasteValue = jobPasteInput.value.trim();
+        // Basic validation
+        if (!file) {
+            showError('Please select a resume file.');
+            return;
+        }
 
             if (isUrlSelected && !urlValue) {
                 showError('Please enter a job posting URL.');
