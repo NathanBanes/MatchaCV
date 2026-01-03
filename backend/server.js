@@ -232,7 +232,12 @@ app.post('/api/analyze', upload.single('resumeFile'), async (req, res) => {
                     if (!jobDescription || jobDescription.trim().length === 0) {
                         fs.unlinkSync(syncTempPath);
                         await s3Storage.deleteFile(s3Key);
-                        return res.status(400).json({ error: 'Could not extract job description' });
+                        return res.status(400).json({ 
+                            error: 'Could not extract job description',
+                            message: jobPostingType === 'url' 
+                                ? 'Failed to extract content from the job posting URL. The page may require JavaScript or may be blocking automated requests. Please try using "Paste Job Posting" instead.'
+                                : 'Job description is empty'
+                        });
                     }
                     
                     // Extract keywords
@@ -375,7 +380,12 @@ app.post('/api/analyze-sync', upload.single('resumeFile'), async (req, res) => {
 
             if (!jobDescription || jobDescription.trim().length === 0) {
                 fs.unlinkSync(tempFilePath);
-                return res.status(400).json({ error: 'Could not extract job description' });
+                return res.status(400).json({ 
+                    error: 'Could not extract job description',
+                    message: jobPostingType === 'url' 
+                        ? 'Failed to extract content from the job posting URL. The page may require JavaScript or may be blocking automated requests. Please try using "Paste Job Posting" instead.'
+                        : 'Job description is empty'
+                });
             }
 
             // Extract keywords from job description
