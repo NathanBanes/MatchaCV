@@ -225,15 +225,15 @@ app.post('/api/analyze', upload.single('resumeFile'), async (req, res) => {
                 } catch (syncError) {
                     console.error('Sync processing error:', syncError);
                     // Clean up S3 file
-                    try {
-                        await s3Storage.deleteFile(s3Key);
-                    } catch (deleteError) {
+                try {
+                    await s3Storage.deleteFile(s3Key);
+                } catch (deleteError) {
                         console.error('Failed to delete S3 file:', deleteError);
-                    }
-                    return res.status(500).json({ 
+                }
+                return res.status(500).json({ 
                         error: 'Failed to process resume', 
                         message: syncError.message 
-                    });
+                });
                 }
             }
 
@@ -465,7 +465,7 @@ app.get('/api/job/:jobId/results', async (req, res) => {
                 console.error('Failed to parse keywordMatches JSON:', e);
             }
         }
-        
+
         res.json({
             success: true,
             jobId: results.jobId,

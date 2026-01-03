@@ -134,8 +134,8 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             e.stopPropagation();
         }
-        
-        // Basic validation
+            
+            // Basic validation
             const file = resumeFileInput.files[0];
             if (!file) {
                 showError('Please select a resume file.');

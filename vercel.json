@@ -1,13 +1,10 @@
 {
   "functions": {
-    "api/[...path].js": {
+    "api/[...path]/index.js": {
       "maxDuration": 30
+    },
+    "api/health.js": {
+      "maxDuration": 10
     }
-  },
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "/api/:path*"
-    }
-  ]
+  }
 }

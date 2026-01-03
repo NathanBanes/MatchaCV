@@ -65,7 +65,7 @@ async function notifyServer(jobId, event, data) {
                 req.end();
             });
         }
-    } catch (error) {
+} catch (error) {
         console.warn(`Worker: Notification error: ${error.message}`);
         return null; // Don't fail the job if notification fails
     }
