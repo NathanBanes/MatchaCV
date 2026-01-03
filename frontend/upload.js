@@ -215,108 +215,107 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         try {
-                // Call API to upload and get jobId
-                const apiUrl = getApiUrl();
-                // If apiUrl is empty, use relative URL (Vercel will proxy)
-                const fullUrl = apiUrl ? `${apiUrl}/api/analyze` : '/api/analyze';
-                
-                const response = await fetch(fullUrl, {
-                    method: 'POST',
-                    body: formData,
-                    mode: 'cors',
-                    credentials: 'omit',
-                    headers: {
-                        // Don't set Content-Type - let browser set it with boundary for FormData
-                    }
-                }).catch(fetchError => {
-                    console.error('Fetch error details:', {
-                        name: fetchError.name,
-                        message: fetchError.message,
-                        stack: fetchError.stack
-                    });
-                    throw fetchError;
+            // Call API to upload and get jobId
+            const apiUrl = getApiUrl();
+            // If apiUrl is empty, use relative URL (Vercel will proxy)
+            const fullUrl = apiUrl ? `${apiUrl}/api/analyze` : '/api/analyze';
+            
+            const response = await fetch(fullUrl, {
+                method: 'POST',
+                body: formData,
+                mode: 'cors',
+                credentials: 'omit',
+                headers: {
+                    // Don't set Content-Type - let browser set it with boundary for FormData
+                }
+            }).catch(fetchError => {
+                console.error('Fetch error details:', {
+                    name: fetchError.name,
+                    message: fetchError.message,
+                    stack: fetchError.stack
                 });
+                throw fetchError;
+            });
 
-                // Check if response is ok before trying to parse JSON
-                if (!response.ok) {
-                    const errorText = await response.text();
-                    let errorData;
-                    try {
-                        errorData = JSON.parse(errorText);
-                    } catch (e) {
-                        errorData = { error: `Server error: ${response.status} ${response.statusText}`, message: errorText };
-                    }
-                    // Prioritize message field, then error field
-                    const errorMessage = errorData.message || errorData.error || `Server error: ${response.status}`;
-                    throw new Error(errorMessage);
+            // Check if response is ok before trying to parse JSON
+            if (!response.ok) {
+                const errorText = await response.text();
+                let errorData;
+                try {
+                    errorData = JSON.parse(errorText);
+                } catch (e) {
+                    errorData = { error: `Server error: ${response.status} ${response.statusText}`, message: errorText };
                 }
-
-                const data = await response.json();
-                
-                
-                // Check if response is an error (even if status is 200)
-                if (!response.ok || data.error) {
-                    // Prioritize message field, then error field
-                    const errorMessage = data.message || data.error || `Server error: ${response.status} ${response.statusText}`;
-                    throw new Error(errorMessage);
-                }
-                
-                // Check if this is async response (has jobId) or sync response (has score directly)
-                if (data.jobId) {
-                    // Async response - connect to WebSocket
-                    updateLoadingMessage('Analyzing Resume');
-                    connectToWebSocket(data.jobId);
-                } else if (data.score && data.suggestions) {
-                    // Sync response - display results directly
-                    hideLoading();
-                    displayResults(data);
-                } else {
-                    // Unexpected response format
-                    if (data.error || data.message) {
-                        throw new Error(data.error || data.message || 'Unexpected server response format');
-                    }
-                    throw new Error('Unexpected server response format. Server response: ' + JSON.stringify(data));
-                }
-
-            } catch (error) {
-                console.error('Analysis error:', error);
-                hideLoading();
-                
-                // More specific error messages
-                let errorMessage = error.message || 'Failed to analyze resume.';
-                
-                console.error('Analysis error details:', {
-                    message: error.message,
-                    name: error.name,
-                    stack: error.stack
-                });
-                
-                // Filter out browser validation errors - don't show them
-                if (error.message && (
-                    error.message.includes('string did not match the expected pattern') ||
-                    error.message.includes('Please fill out this field') ||
-                    error.message.includes('Please match the requested format')
-                )) {
-                    // This is a browser validation error - ignore it and show a generic message
-                    console.warn('Browser validation error caught, ignoring:', error.message);
-                    errorMessage = 'Please check your inputs and try again.';
-                } else if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('Load failed'))) {
-                    // Only show generic connection error if it's actually a network error
-                    // Don't override specific backend error messages
-                    if (!error.message.includes('URL') && !error.message.includes('extract') && !error.message.includes('job posting')) {
-                        errorMessage = 'Cannot connect to server. The backend may not be running or the API endpoint is not available.';
-                    } else {
-                        // Keep the backend's specific error message
-                        errorMessage = error.message;
-                    }
-                } else if (error.message && error.message.includes('CORS')) {
-                    errorMessage = 'CORS error. Please check server CORS configuration allows requests from: ' + window.location.origin;
-                }
-                // If error message contains URL extraction hints, keep it as-is
-                // This ensures backend error messages are shown to the user
-                
-                showError(errorMessage);
+                // Prioritize message field, then error field
+                const errorMessage = errorData.message || errorData.error || `Server error: ${response.status}`;
+                throw new Error(errorMessage);
             }
+
+            const data = await response.json();
+            
+            // Check if response is an error (even if status is 200)
+            if (!response.ok || data.error) {
+                // Prioritize message field, then error field
+                const errorMessage = data.message || data.error || `Server error: ${response.status} ${response.statusText}`;
+                throw new Error(errorMessage);
+            }
+            
+            // Check if this is async response (has jobId) or sync response (has score directly)
+            if (data.jobId) {
+                // Async response - connect to WebSocket
+                updateLoadingMessage('Analyzing Resume');
+                connectToWebSocket(data.jobId);
+            } else if (data.score && data.suggestions) {
+                // Sync response - display results directly
+                hideLoading();
+                displayResults(data);
+            } else {
+                // Unexpected response format
+                if (data.error || data.message) {
+                    throw new Error(data.error || data.message || 'Unexpected server response format');
+                }
+                throw new Error('Unexpected server response format. Server response: ' + JSON.stringify(data));
+            }
+
+        } catch (error) {
+            console.error('Analysis error:', error);
+            hideLoading();
+            
+            // More specific error messages
+            let errorMessage = error.message || 'Failed to analyze resume.';
+            
+            console.error('Analysis error details:', {
+                message: error.message,
+                name: error.name,
+                stack: error.stack
+            });
+            
+            // Filter out browser validation errors - don't show them
+            if (error.message && (
+                error.message.includes('string did not match the expected pattern') ||
+                error.message.includes('Please fill out this field') ||
+                error.message.includes('Please match the requested format')
+            )) {
+                // This is a browser validation error - ignore it and show a generic message
+                console.warn('Browser validation error caught, ignoring:', error.message);
+                errorMessage = 'Please check your inputs and try again.';
+            } else if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('Load failed'))) {
+                // Only show generic connection error if it's actually a network error
+                // Don't override specific backend error messages
+                if (!error.message.includes('URL') && !error.message.includes('extract') && !error.message.includes('job posting')) {
+                    errorMessage = 'Cannot connect to server. The backend may not be running or the API endpoint is not available.';
+                } else {
+                    // Keep the backend's specific error message
+                    errorMessage = error.message;
+                }
+            } else if (error.message && error.message.includes('CORS')) {
+                errorMessage = 'CORS error. Please check server CORS configuration allows requests from: ' + window.location.origin;
+            }
+            // If error message contains URL extraction hints, keep it as-is
+            // This ensures backend error messages are shown to the user
+            
+            showError(errorMessage);
+        }
     }
     
     // No form element = no browser validation! Just ensure inputs don't validate
