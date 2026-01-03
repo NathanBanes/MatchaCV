@@ -230,6 +230,37 @@ document.head.appendChild(style);
 // reCAPTCHA v2 handling (Checkbox)
 let captchaWidgets = {};
 let captchaVerified = {};
+let recaptchaReady = false;
+
+// Wait for reCAPTCHA to load
+function waitForRecaptcha() {
+    return new Promise((resolve, reject) => {
+        // Check if already loaded
+        if (typeof grecaptcha !== 'undefined') {
+            recaptchaReady = true;
+            resolve();
+            return;
+        }
+        
+        // Wait for script to load
+        let attempts = 0;
+        const maxAttempts = 50; // 5 seconds max wait
+        
+        const checkInterval = setInterval(() => {
+            attempts++;
+            
+            if (typeof grecaptcha !== 'undefined') {
+                clearInterval(checkInterval);
+                recaptchaReady = true;
+                console.log('reCAPTCHA loaded');
+                resolve();
+            } else if (attempts >= maxAttempts) {
+                clearInterval(checkInterval);
+                reject(new Error('reCAPTCHA script failed to load'));
+            }
+        }, 100);
+    });
+}
 
 function onCaptchaSuccess(token, captchaId) {
     captchaVerified[captchaId] = true;
@@ -247,7 +278,7 @@ function onCaptchaExpired(captchaId) {
     console.log('reCAPTCHA expired for:', captchaId);
 }
 
-function handleGetStarted(captchaContainerId, wrapperId) {
+async function handleGetStarted(captchaContainerId, wrapperId) {
     const wrapper = document.getElementById(wrapperId);
     const container = document.getElementById(captchaContainerId);
     
@@ -262,11 +293,30 @@ function handleGetStarted(captchaContainerId, wrapperId) {
         return;
     }
     
-    // Check if grecaptcha is loaded
-    if (typeof grecaptcha === 'undefined') {
-        console.error('reCAPTCHA not loaded yet');
-        alert('Please wait for the page to fully load.');
-        return;
+    // Wait for reCAPTCHA to load if not ready
+    if (!recaptchaReady && typeof grecaptcha === 'undefined') {
+        const button = document.getElementById('getStartedBtn') || document.getElementById('getStartedFreeBtn');
+        if (button) {
+            const originalText = button.textContent;
+            button.textContent = 'Loading...';
+            button.disabled = true;
+        }
+        
+        try {
+            await waitForRecaptcha();
+            if (button) {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        } catch (error) {
+            console.error('reCAPTCHA failed to load:', error);
+            if (button) {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+            alert('reCAPTCHA failed to load. Please refresh the page and try again.');
+            return;
+        }
     }
     
     // Show the wrapper
@@ -287,7 +337,7 @@ function handleGetStarted(captchaContainerId, wrapperId) {
             console.log('reCAPTCHA widget created for:', captchaContainerId);
         } catch (error) {
             console.error('Error rendering reCAPTCHA:', error);
-            alert('Error loading captcha. Please refresh the page.');
+            alert('Error loading captcha: ' + error.message + '\n\nPlease refresh the page.');
         }
     } else {
         // If widget exists but not verified, show it and reset if needed
