@@ -85,7 +85,7 @@ MatchaCV/
 1. Open your browser and navigate to `http://localhost:3000`
 2. Click "Get Started" and complete the reCAPTCHA
 3. Upload your resume (PDF, DOC, or DOCX)
-4. Paste or provide a URL to the job description
+4. Paste a job description
 5. Click "Analyze Resume" to get your ATS score and suggestions
 
 ## Built With
