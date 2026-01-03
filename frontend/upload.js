@@ -229,7 +229,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     } catch (e) {
                         errorData = { error: `Server error: ${response.status} ${response.statusText}`, message: errorText };
                     }
-                    throw new Error(errorData.error || errorData.message || `Server error: ${response.status}`);
+                    // Prioritize message field, then error field
+                    const errorMessage = errorData.message || errorData.error || `Server error: ${response.status}`;
+                    throw new Error(errorMessage);
                 }
 
                 const data = await response.json();
@@ -237,7 +239,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // Check if response is an error (even if status is 200)
                 if (!response.ok || data.error) {
-                    const errorMessage = data.error || data.message || `Server error: ${response.status} ${response.statusText}`;
+                    // Prioritize message field, then error field
+                    const errorMessage = data.message || data.error || `Server error: ${response.status} ${response.statusText}`;
                     throw new Error(errorMessage);
                 }
                 
@@ -280,11 +283,20 @@ document.addEventListener('DOMContentLoaded', function() {
                     // This is a browser validation error - ignore it and show a generic message
                     console.warn('Browser validation error caught, ignoring:', error.message);
                     errorMessage = 'Please check your inputs and try again.';
-                } else if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('Load failed') || error.message.includes('404')) {
-                    errorMessage = 'Cannot connect to server. The backend may not be running or the API endpoint is not available.';
-                } else if (error.message.includes('CORS')) {
+                } else if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('Load failed'))) {
+                    // Only show generic connection error if it's actually a network error
+                    // Don't override specific backend error messages
+                    if (!error.message.includes('URL') && !error.message.includes('extract') && !error.message.includes('job posting')) {
+                        errorMessage = 'Cannot connect to server. The backend may not be running or the API endpoint is not available.';
+                    } else {
+                        // Keep the backend's specific error message
+                        errorMessage = error.message;
+                    }
+                } else if (error.message && error.message.includes('CORS')) {
                     errorMessage = 'CORS error. Please check server CORS configuration allows requests from: ' + window.location.origin;
                 }
+                // If error message contains URL extraction hints, keep it as-is
+                // This ensures backend error messages are shown to the user
                 
                 showError(errorMessage);
             }
