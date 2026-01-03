@@ -271,20 +271,29 @@ function waitForRecaptcha() {
         
         // Also poll in case events don't fire
         let attempts = 0;
-        const maxAttempts = 30; // 3 seconds max wait
+        const maxAttempts = 20; // 2 seconds max wait (reduced for faster feedback)
+        let resolved = false;
         
         const checkInterval = setInterval(() => {
             attempts++;
             
             if (typeof grecaptcha !== 'undefined') {
-                clearInterval(checkInterval);
-                recaptchaReady = true;
-                console.log('reCAPTCHA loaded (polling)');
-                resolve();
+                if (!resolved) {
+                    resolved = true;
+                    clearInterval(checkInterval);
+                    recaptchaReady = true;
+                    console.log('reCAPTCHA loaded (polling)');
+                    resolve();
+                }
             } else if (attempts >= maxAttempts) {
-                clearInterval(checkInterval);
-                console.error('reCAPTCHA timeout - script tag exists but API not available');
-                reject(new Error('reCAPTCHA script loaded but API not available. Check console for errors.'));
+                if (!resolved) {
+                    resolved = true;
+                    clearInterval(checkInterval);
+                    console.error('reCAPTCHA timeout after', attempts * 100, 'ms');
+                    console.error('Script tag:', scriptTag ? scriptTag.src : 'not found');
+                    console.error('Check Network tab for api.js request');
+                    reject(new Error('reCAPTCHA script not loading. Check browser console (F12) for errors.'));
+                }
             }
         }, 100);
     });
