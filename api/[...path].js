@@ -2,6 +2,13 @@
 // This catch-all route handles all API endpoints including file uploads
 
 export default async function handler(req, res) {
+  console.log('[Proxy] Function invoked:', {
+    method: req.method,
+    url: req.url,
+    query: req.query,
+    path: req.query.path
+  });
+
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -11,8 +18,21 @@ export default async function handler(req, res) {
   }
 
   // Get the path from the catch-all route
+  // For /api/health, req.query.path should be ['health']
+  // For /api/analyze, req.query.path should be ['analyze']
   const pathSegments = req.query.path || [];
-  const apiPath = Array.isArray(pathSegments) ? pathSegments.join('/') : pathSegments;
+  let apiPath;
+  
+  if (Array.isArray(pathSegments)) {
+    apiPath = pathSegments.length > 0 ? pathSegments.join('/') : '';
+  } else if (pathSegments) {
+    apiPath = pathSegments;
+  } else {
+    // If no path, check the URL directly
+    const urlMatch = req.url.match(/^\/api\/(.+)$/);
+    apiPath = urlMatch ? urlMatch[1] : '';
+  }
+  
   const backendUrl = `http://18.218.178.212:3000/api/${apiPath}`;
   
   // Forward query parameters (excluding 'path')
