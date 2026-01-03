@@ -272,9 +272,9 @@ function loadRecaptchaScript() {
             return;
         }
         
-        // Script not found, create it (v3 doesn't need render parameter in URL)
+        // Script not found, create it (v3 needs render parameter with site key)
         const script = document.createElement('script');
-        script.src = 'https://www.google.com/recaptcha/api.js';
+        script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
         script.async = true;
         script.defer = true;
         
