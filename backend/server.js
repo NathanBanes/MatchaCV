@@ -572,7 +572,6 @@ app.post('/api/job/:jobId/notify-complete', async (req, res) => {
 
 // WebSocket connection handling
 io.on('connection', (socket) => {
-    console.log('WebSocket: Client connected:', socket.id);
 
     // Client joins a room for a specific job
     socket.on('join:job', (jobId) => {
