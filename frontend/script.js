@@ -238,13 +238,40 @@ function waitForRecaptcha() {
         // Check if already loaded
         if (typeof grecaptcha !== 'undefined') {
             recaptchaReady = true;
+            console.log('reCAPTCHA already loaded');
             resolve();
             return;
         }
         
-        // Wait for script to load
+        // Check if script tag exists
+        const scriptTag = document.querySelector('script[src*="recaptcha/api.js"]');
+        if (!scriptTag) {
+            console.error('reCAPTCHA script tag not found in HTML');
+            reject(new Error('reCAPTCHA script tag missing'));
+            return;
+        }
+        
+        // Check if script has loaded but grecaptcha not available
+        scriptTag.addEventListener('load', () => {
+            console.log('reCAPTCHA script tag loaded');
+            // Give it a moment to initialize
+            setTimeout(() => {
+                if (typeof grecaptcha !== 'undefined') {
+                    recaptchaReady = true;
+                    console.log('reCAPTCHA API available');
+                    resolve();
+                }
+            }, 500);
+        });
+        
+        scriptTag.addEventListener('error', () => {
+            console.error('reCAPTCHA script failed to load');
+            reject(new Error('Failed to load reCAPTCHA script from Google'));
+        });
+        
+        // Also poll in case events don't fire
         let attempts = 0;
-        const maxAttempts = 50; // 5 seconds max wait
+        const maxAttempts = 30; // 3 seconds max wait
         
         const checkInterval = setInterval(() => {
             attempts++;
@@ -252,11 +279,12 @@ function waitForRecaptcha() {
             if (typeof grecaptcha !== 'undefined') {
                 clearInterval(checkInterval);
                 recaptchaReady = true;
-                console.log('reCAPTCHA loaded');
+                console.log('reCAPTCHA loaded (polling)');
                 resolve();
             } else if (attempts >= maxAttempts) {
                 clearInterval(checkInterval);
-                reject(new Error('reCAPTCHA script failed to load'));
+                console.error('reCAPTCHA timeout - script tag exists but API not available');
+                reject(new Error('reCAPTCHA script loaded but API not available. Check console for errors.'));
             }
         }, 100);
     });
@@ -296,25 +324,35 @@ async function handleGetStarted(captchaContainerId, wrapperId) {
     // Wait for reCAPTCHA to load if not ready
     if (!recaptchaReady && typeof grecaptcha === 'undefined') {
         const button = document.getElementById('getStartedBtn') || document.getElementById('getStartedFreeBtn');
+        const originalText = button ? button.textContent : 'Get Started';
+        
         if (button) {
-            const originalText = button.textContent;
             button.textContent = 'Loading...';
             button.disabled = true;
         }
         
         try {
+            console.log('Waiting for reCAPTCHA to load...');
             await waitForRecaptcha();
+            console.log('reCAPTCHA loaded successfully');
             if (button) {
                 button.textContent = originalText;
                 button.disabled = false;
             }
         } catch (error) {
             console.error('reCAPTCHA failed to load:', error);
+            console.error('Error details:', {
+                message: error.message,
+                scriptTagExists: !!document.querySelector('script[src*="recaptcha/api.js"]'),
+                grecaptchaDefined: typeof grecaptcha !== 'undefined'
+            });
+            
             if (button) {
                 button.textContent = originalText;
                 button.disabled = false;
             }
-            alert('reCAPTCHA failed to load. Please refresh the page and try again.');
+            
+            alert('reCAPTCHA failed to load: ' + error.message + '\n\nPlease:\n1. Check your internet connection\n2. Disable ad blockers\n3. Refresh the page and try again');
             return;
         }
     }
