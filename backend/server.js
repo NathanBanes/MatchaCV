@@ -20,6 +20,7 @@ const multer = require('multer');
 const cors = require('cors');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
+const axios = require('axios');
 const resumeParser = require('./utils/resumeParser');
 const jobAnalyzer = require('./utils/jobAnalyzer');
 const atsScorer = require('./utils/atsScorer');
@@ -38,6 +39,38 @@ const io = new Server(server, {
 });
 
 const PORT = process.env.PORT || 3000;
+
+// reCAPTCHA verification function
+async function verifyRecaptcha(token) {
+    if (!process.env.RECAPTCHA_SECRET_KEY) {
+        console.warn('RECAPTCHA_SECRET_KEY not set, skipping verification');
+        return true; // Allow requests if secret key not configured (for development)
+    }
+    
+    if (!token) {
+        return false;
+    }
+    
+    try {
+        const response = await axios.post('https://www.google.com/recaptcha/api/siteverify', null, {
+            params: {
+                secret: process.env.RECAPTCHA_SECRET_KEY,
+                response: token
+            }
+        });
+        
+        if (response.data.success === true) {
+            console.log('reCAPTCHA verification successful');
+            return true;
+        } else {
+            console.warn('reCAPTCHA verification failed:', response.data['error-codes']);
+            return false;
+        }
+    } catch (error) {
+        console.error('reCAPTCHA verification error:', error.message);
+        return false;
+    }
+}
 
 // Middleware
 app.use(cors({
@@ -75,6 +108,17 @@ const upload = multer({
 // Async API endpoint for resume analysis (new architecture)
 app.post('/api/analyze', upload.single('resumeFile'), async (req, res) => {
     try {
+        // Verify reCAPTCHA token
+        const recaptchaToken = req.body.recaptchaToken;
+        if (!recaptchaToken) {
+            return res.status(400).json({ error: 'reCAPTCHA token is required' });
+        }
+        
+        const isValidCaptcha = await verifyRecaptcha(recaptchaToken);
+        if (!isValidCaptcha) {
+            return res.status(400).json({ error: 'reCAPTCHA verification failed. Please try again.' });
+        }
+        
         // Validate required environment variables
         if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY || !process.env.AWS_S3_BUCKET) {
             return res.status(500).json({ 
@@ -299,6 +343,17 @@ app.post('/api/analyze', upload.single('resumeFile'), async (req, res) => {
 // Fallback synchronous endpoint (for backward compatibility)
 app.post('/api/analyze-sync', upload.single('resumeFile'), async (req, res) => {
     try {
+        // Verify reCAPTCHA token
+        const recaptchaToken = req.body.recaptchaToken;
+        if (!recaptchaToken) {
+            return res.status(400).json({ error: 'reCAPTCHA token is required' });
+        }
+        
+        const isValidCaptcha = await verifyRecaptcha(recaptchaToken);
+        if (!isValidCaptcha) {
+            return res.status(400).json({ error: 'reCAPTCHA verification failed. Please try again.' });
+        }
+        
         if (!req.file) {
             return res.status(400).json({ error: 'No resume file uploaded' });
         }

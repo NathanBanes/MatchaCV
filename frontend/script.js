@@ -231,6 +231,7 @@ let captchaVerified = {};
 
 function onCaptchaSuccess(token, captchaId) {
     captchaVerified[captchaId] = true;
+    window.recaptchaToken = token; // Store token globally for use in upload page
     console.log('reCAPTCHA verified for:', captchaId);
     // Navigate after successful verification
     setTimeout(() => {
@@ -272,7 +273,7 @@ function handleGetStarted(captchaContainerId, wrapperId) {
     if (!captchaWidgets[captchaContainerId]) {
         try {
             captchaWidgets[captchaContainerId] = grecaptcha.render(container, {
-                'sitekey': '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI',
+                'sitekey': '6LdZfT4sAAAAADnu-2F2xDX5u5KkKWH8cWILbbiU', // TODO: Replace with your actual reCAPTCHA site key from Google
                 'callback': function(token) {
                     onCaptchaSuccess(token, captchaContainerId);
                 },

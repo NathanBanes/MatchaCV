@@ -190,6 +190,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('resumeFile', file);
             formData.append('jobPostingType', isUrlSelected ? 'url' : 'paste');
+            formData.append('recaptchaToken', window.recaptchaToken || ''); // Add reCAPTCHA token
             if (isUrlSelected) {
                 formData.append('jobUrl', urlValue);
             } else {
