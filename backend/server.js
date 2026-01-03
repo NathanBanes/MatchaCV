@@ -331,6 +331,13 @@ app.post('/api/analyze', upload.single('resumeFile'), async (req, res) => {
 
     } catch (error) {
         console.error('Analysis error:', error);
+        // Check if it's a URL extraction error
+        if (error.message && (error.message.includes('fetch job description') || error.message.includes('extract') || error.message.includes('URL') || error.message.includes('Cannot connect'))) {
+            return res.status(400).json({ 
+                error: 'Failed to fetch job posting from URL',
+                message: error.message || 'The job posting URL could not be accessed. Please try using "Paste Job Posting" instead.'
+            });
+        }
         res.status(500).json({ 
             error: 'Analysis failed', 
             message: error.message || 'An error occurred during analysis' 
