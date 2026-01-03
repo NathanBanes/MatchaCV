@@ -252,6 +252,8 @@ function waitForRecaptcha() {
 function onCaptchaSuccess(token, captchaId) {
     captchaVerified[captchaId] = true;
     window.recaptchaToken = token; // Store token globally for use in upload page
+    // Also store in sessionStorage to persist across page navigation
+    sessionStorage.setItem('recaptchaToken', token);
     // Navigate after successful verification
     setTimeout(() => {
         window.location.href = 'upload.html';

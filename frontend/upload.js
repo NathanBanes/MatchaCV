@@ -131,20 +131,32 @@ document.addEventListener('DOMContentLoaded', function() {
     // Form submission handler - use button click instead of form submit to bypass validation
     // reCAPTCHA token should already be set from the home page (index.html)
     
+    // Load reCAPTCHA token from sessionStorage on page load
+    if (sessionStorage.getItem('recaptchaToken')) {
+        window.recaptchaToken = sessionStorage.getItem('recaptchaToken');
+    }
+    
     async function handleFormSubmit(e) {
         if (e) {
             e.preventDefault();
             e.stopPropagation();
         }
         
-        // Check if we have a valid reCAPTCHA token from the home page
-        if (!window.recaptchaToken) {
+        // Check if we have a valid reCAPTCHA token (from window or sessionStorage)
+        const token = window.recaptchaToken || sessionStorage.getItem('recaptchaToken');
+        if (!token) {
             // No token - redirect back to home page to verify
             showError('Please verify reCAPTCHA on the home page first. Redirecting...');
             setTimeout(() => {
                 window.location.href = 'index.html';
             }, 2000);
             return;
+        }
+        
+        // Ensure token is in both places
+        window.recaptchaToken = token;
+        if (!sessionStorage.getItem('recaptchaToken')) {
+            sessionStorage.setItem('recaptchaToken', token);
         }
         
         // If we have a token, proceed directly with form submission
@@ -207,7 +219,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const formData = new FormData();
         formData.append('resumeFile', file);
         formData.append('jobPostingType', isUrlSelected ? 'url' : 'paste');
-        formData.append('recaptchaToken', window.recaptchaToken || ''); // Add reCAPTCHA token
+            formData.append('recaptchaToken', window.recaptchaToken || sessionStorage.getItem('recaptchaToken') || ''); // Add reCAPTCHA token
         if (isUrlSelected) {
             formData.append('jobUrl', urlValue);
         } else {
