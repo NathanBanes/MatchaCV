@@ -14,11 +14,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const uploadForm = document.getElementById('uploadForm');
     const resumeFileInput = document.getElementById('resumeFile');
     const fileNameDisplay = document.getElementById('fileNameDisplay');
-    const jobUrlRadio = document.getElementById('jobUrl');
-    const jobPasteRadio = document.getElementById('jobPaste');
-    const urlInputWrapper = document.getElementById('urlInputWrapper');
     const pasteInputWrapper = document.getElementById('pasteInputWrapper');
-    const jobUrlInput = document.getElementById('jobUrlInput');
     const jobPasteInput = document.getElementById('jobPasteInput');
     const submitBtn = document.getElementById('submitBtn');
     
@@ -35,26 +31,6 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopImmediatePropagation();
             return false;
         }, true);
-    }
-    if (jobUrlInput) {
-        jobUrlInput.removeAttribute('required');
-        jobUrlInput.removeAttribute('pattern');
-        jobUrlInput.required = false;
-        jobUrlInput.setCustomValidity('');
-        jobUrlInput.checkValidity = function() { return true; };
-        jobUrlInput.reportValidity = function() { return true; };
-        // Prevent any validation UI from showing
-        jobUrlInput.addEventListener('invalid', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation();
-            this.setCustomValidity('');
-            return false;
-        }, true);
-        // Also prevent on input/blur events
-        jobUrlInput.addEventListener('blur', function() {
-            this.setCustomValidity('');
-        });
     }
     if (jobPasteInput) {
         jobPasteInput.removeAttribute('required');
@@ -90,27 +66,6 @@ document.addEventListener('DOMContentLoaded', function() {
             this.setCustomValidity('');
             return false;
         }, true);
-    }
-
-    // Toggle between URL and paste text options
-    if (jobUrlRadio && jobPasteRadio) {
-        jobUrlRadio.addEventListener('change', function() {
-            if (this.checked) {
-                urlInputWrapper.style.display = 'block';
-                pasteInputWrapper.style.display = 'none';
-                // Don't set required - we handle validation in JavaScript
-                jobPasteInput.value = ''; // Clear paste input
-            }
-        });
-
-        jobPasteRadio.addEventListener('change', function() {
-            if (this.checked) {
-                urlInputWrapper.style.display = 'none';
-                pasteInputWrapper.style.display = 'block';
-                // Don't set required - we handle validation in JavaScript
-                jobUrlInput.value = ''; // Clear URL input
-            }
-        });
     }
 
     // Handle file upload and display file name
@@ -171,39 +126,9 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
 
-        const isUrlSelected = jobUrlRadio && jobUrlRadio.checked;
-        const urlValue = jobUrlInput ? jobUrlInput.value.trim() : '';
         const pasteValue = jobPasteInput ? jobPasteInput.value.trim() : '';
 
-        if (isUrlSelected && !urlValue) {
-            showError('Please enter a job posting URL.');
-            return;
-        }
-
-        // Validate and normalize URL format if URL is selected
-        if (isUrlSelected && urlValue) {
-            let normalizedUrl = urlValue.trim();
-            
-            // Auto-add https:// if missing
-            if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
-                normalizedUrl = 'https://' + normalizedUrl;
-                jobUrlInput.value = normalizedUrl; // Update the input field
-            }
-            
-            // Validate URL format
-            try {
-                const url = new URL(normalizedUrl);
-                if (!url.protocol.startsWith('http')) {
-                    showError('Please enter a valid URL starting with http:// or https://');
-                    return;
-                }
-            } catch (e) {
-                showError('Please enter a valid URL (e.g., https://example.com/job-posting)');
-                return;
-            }
-        }
-
-        if (!isUrlSelected && !pasteValue) {
+        if (!pasteValue) {
             showError('Please paste the job posting text.');
             return;
         }
@@ -218,13 +143,9 @@ document.addEventListener('DOMContentLoaded', function() {
         // Prepare form data
         const formData = new FormData();
         formData.append('resumeFile', file);
-        formData.append('jobPostingType', isUrlSelected ? 'url' : 'paste');
-            formData.append('recaptchaToken', window.recaptchaToken || sessionStorage.getItem('recaptchaToken') || ''); // Add reCAPTCHA token
-        if (isUrlSelected) {
-            formData.append('jobUrl', urlValue);
-        } else {
-            formData.append('jobPaste', pasteValue);
-        }
+        formData.append('jobPostingType', 'paste');
+        formData.append('recaptchaToken', window.recaptchaToken || sessionStorage.getItem('recaptchaToken') || ''); // Add reCAPTCHA token
+        formData.append('jobPaste', pasteValue);
 
         try {
             // Call API to upload and get jobId
@@ -680,13 +601,9 @@ document.addEventListener('DOMContentLoaded', function() {
                             // Recreate FormData since uploadForm is now a div, not a form
                             const syncFormData = new FormData();
                             syncFormData.append('resumeFile', resumeFileInput.files[0]);
-                            syncFormData.append('jobPostingType', jobUrlRadio.checked ? 'url' : 'paste');
+                            syncFormData.append('jobPostingType', 'paste');
                             syncFormData.append('recaptchaToken', window.recaptchaToken || sessionStorage.getItem('recaptchaToken') || ''); // Add reCAPTCHA token
-                            if (jobUrlRadio.checked) {
-                                syncFormData.append('jobUrl', jobUrlInput.value.trim());
-                            } else {
-                                syncFormData.append('jobPaste', jobPasteInput.value.trim());
-                            }
+                            syncFormData.append('jobPaste', jobPasteInput.value.trim());
                             
                             const syncUrl = apiUrl ? `${apiUrl}/api/analyze-sync` : '/api/analyze-sync';
                             const syncResponse = await fetch(syncUrl, {

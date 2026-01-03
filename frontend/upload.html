@@ -51,21 +51,7 @@
                 <!-- Job Posting Section -->
                 <div class="form-section">
                     <label class="form-label">Job Posting</label>
-                    <div class="job-posting-toggle">
-                        <input type="radio" id="jobUrl" name="jobPostingType" value="url" class="radio-input" checked>
-                        <label for="jobUrl" class="radio-label">Job Posting URL</label>
-                        
-                        <input type="radio" id="jobPaste" name="jobPostingType" value="paste" class="radio-input">
-                        <label for="jobPaste" class="radio-label">Paste Job Posting</label>
-                    </div>
-
-                    <!-- URL Input -->
-                    <div class="job-input-wrapper" id="urlInputWrapper">
-                        <input type="text" id="jobUrlInput" name="jobUrl" class="form-input" placeholder="https://example.com/job-posting" autocomplete="off" spellcheck="false">
-                    </div>
-
-                    <!-- Paste Text Input -->
-                    <div class="job-input-wrapper" id="pasteInputWrapper" style="display: none;">
+                    <div class="job-input-wrapper" id="pasteInputWrapper">
                         <textarea id="jobPasteInput" name="jobPaste" class="form-textarea" rows="8" placeholder="Paste the job posting text here..." autocomplete="off" spellcheck="false"></textarea>
                     </div>
                 </div>
