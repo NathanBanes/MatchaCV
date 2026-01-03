@@ -441,45 +441,8 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             e.stopImmediatePropagation();
             
-            // Call handleFormSubmit
+            // Call handleFormSubmit (it handles everything including reCAPTCHA)
             await handleFormSubmit(e);
-            
-            // Aggressively disable all validation before submitting
-            // Clear any existing validation messages first
-            if (uploadForm) {
-                // Clear validation on all inputs
-                try {
-                    uploadForm.querySelectorAll('input, textarea').forEach(input => {
-                        input.setCustomValidity('');
-                        input.checkValidity = function() { return true; };
-                        input.reportValidity = function() { return true; };
-                        try { input.validationMessage = ''; } catch (err) {}
-                    });
-                } catch (err) {}
-            }
-            if (jobUrlInput) {
-                jobUrlInput.checkValidity = function() { return true; };
-                jobUrlInput.reportValidity = function() { return true; };
-                jobUrlInput.setCustomValidity('');
-                try { jobUrlInput.validationMessage = ''; } catch (err) {}
-            }
-            if (jobPasteInput) {
-                jobPasteInput.checkValidity = function() { return true; };
-                jobPasteInput.reportValidity = function() { return true; };
-                jobPasteInput.setCustomValidity('');
-                try { jobPasteInput.validationMessage = ''; } catch (err) {}
-            }
-            if (resumeFileInput) {
-                resumeFileInput.checkValidity = function() { return true; };
-                resumeFileInput.reportValidity = function() { return true; };
-                resumeFileInput.setCustomValidity('');
-                try { resumeFileInput.validationMessage = ''; } catch (err) {}
-            }
-            
-            // Small delay to ensure validation is cleared
-            setTimeout(() => {
-                handleFormSubmit(e);
-            }, 0);
         }, false);
     }
     
