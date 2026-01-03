@@ -151,7 +151,7 @@ document.addEventListener('DOMContentLoaded', function() {
         proceedWithFormSubmission();
     }
     
-    function proceedWithFormSubmission() {
+    async function proceedWithFormSubmission() {
         // Basic validation
         const file = resumeFileInput.files[0];
         if (!file) {
@@ -164,57 +164,57 @@ document.addEventListener('DOMContentLoaded', function() {
         const pasteValue = jobPasteInput ? jobPasteInput.value.trim() : '';
 
         if (isUrlSelected && !urlValue) {
-                showError('Please enter a job posting URL.');
-                return;
-            }
+            showError('Please enter a job posting URL.');
+            return;
+        }
 
-            // Validate and normalize URL format if URL is selected
-            if (isUrlSelected && urlValue) {
-                let normalizedUrl = urlValue.trim();
-                
-                // Auto-add https:// if missing
-                if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
-                    normalizedUrl = 'https://' + normalizedUrl;
-                    jobUrlInput.value = normalizedUrl; // Update the input field
-                }
-                
-                // Validate URL format
-                try {
-                    const url = new URL(normalizedUrl);
-                    if (!url.protocol.startsWith('http')) {
-                        showError('Please enter a valid URL starting with http:// or https://');
-                        return;
-                    }
-                } catch (e) {
-                    showError('Please enter a valid URL (e.g., https://example.com/job-posting)');
+        // Validate and normalize URL format if URL is selected
+        if (isUrlSelected && urlValue) {
+            let normalizedUrl = urlValue.trim();
+            
+            // Auto-add https:// if missing
+            if (!normalizedUrl.startsWith('http://') && !normalizedUrl.startsWith('https://')) {
+                normalizedUrl = 'https://' + normalizedUrl;
+                jobUrlInput.value = normalizedUrl; // Update the input field
+            }
+            
+            // Validate URL format
+            try {
+                const url = new URL(normalizedUrl);
+                if (!url.protocol.startsWith('http')) {
+                    showError('Please enter a valid URL starting with http:// or https://');
                     return;
                 }
-            }
-
-            if (!isUrlSelected && !pasteValue) {
-                showError('Please paste the job posting text.');
+            } catch (e) {
+                showError('Please enter a valid URL (e.g., https://example.com/job-posting)');
                 return;
             }
+        }
 
-            // Hide previous results/errors
-            hideResults();
-            hideError();
-            
-            // Show loading state
-            showLoading();
-            
-            // Prepare form data
-            const formData = new FormData();
-            formData.append('resumeFile', file);
-            formData.append('jobPostingType', isUrlSelected ? 'url' : 'paste');
-            formData.append('recaptchaToken', window.recaptchaToken || ''); // Add reCAPTCHA token
-            if (isUrlSelected) {
-                formData.append('jobUrl', urlValue);
-            } else {
-                formData.append('jobPaste', pasteValue);
-            }
+        if (!isUrlSelected && !pasteValue) {
+            showError('Please paste the job posting text.');
+            return;
+        }
 
-            try {
+        // Hide previous results/errors
+        hideResults();
+        hideError();
+        
+        // Show loading state
+        showLoading();
+        
+        // Prepare form data
+        const formData = new FormData();
+        formData.append('resumeFile', file);
+        formData.append('jobPostingType', isUrlSelected ? 'url' : 'paste');
+        formData.append('recaptchaToken', window.recaptchaToken || ''); // Add reCAPTCHA token
+        if (isUrlSelected) {
+            formData.append('jobUrl', urlValue);
+        } else {
+            formData.append('jobPaste', pasteValue);
+        }
+
+        try {
                 // Call API to upload and get jobId
                 const apiUrl = getApiUrl();
                 // If apiUrl is empty, use relative URL (Vercel will proxy)
