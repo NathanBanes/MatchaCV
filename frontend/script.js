@@ -228,6 +228,77 @@ document.head.appendChild(style);
 // reCAPTCHA v3 handling
 const RECAPTCHA_SITE_KEY = '6Ldwfz4sAAAAAA_Nv9zTiENK2Q1dhnS0qaDzV13J';
 
+// Load reCAPTCHA script dynamically if not already loaded
+function loadRecaptchaScript() {
+    return new Promise((resolve, reject) => {
+        // Check if script is already in the DOM
+        const existingScript = document.querySelector('script[src*="recaptcha/api.js"]');
+        
+        if (existingScript) {
+            // Script tag exists, wait for it to load
+            if (typeof grecaptcha !== 'undefined') {
+                resolve();
+                return;
+            }
+            
+            // Wait for script to execute
+            existingScript.onload = () => {
+                if (typeof grecaptcha !== 'undefined') {
+                    resolve();
+                } else {
+                    reject(new Error('reCAPTCHA script loaded but API not available'));
+                }
+            };
+            
+            existingScript.onerror = () => {
+                reject(new Error('reCAPTCHA script failed to load from Google'));
+            };
+            
+            // If script already loaded but grecaptcha not available, wait a bit
+            let attempts = 0;
+            const checkInterval = setInterval(() => {
+                attempts++;
+                if (typeof grecaptcha !== 'undefined') {
+                    clearInterval(checkInterval);
+                    resolve();
+                } else if (attempts >= 30) {
+                    clearInterval(checkInterval);
+                    reject(new Error('reCAPTCHA script loaded but API not initialized'));
+                }
+            }, 100);
+            
+            return;
+        }
+        
+        // Script not found, create it
+        const script = document.createElement('script');
+        script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
+        script.async = true;
+        script.defer = true;
+        
+        script.onload = () => {
+            if (typeof grecaptcha !== 'undefined') {
+                resolve();
+            } else {
+                // Wait a bit for grecaptcha to initialize
+                setTimeout(() => {
+                    if (typeof grecaptcha !== 'undefined') {
+                        resolve();
+                    } else {
+                        reject(new Error('reCAPTCHA script loaded but API not available'));
+                    }
+                }, 500);
+            }
+        };
+        
+        script.onerror = () => {
+            reject(new Error('Failed to load reCAPTCHA script. Check network connection and CSP headers.'));
+        };
+        
+        document.head.appendChild(script);
+    });
+}
+
 // Wait for reCAPTCHA to load
 function waitForRecaptcha() {
     return new Promise((resolve, reject) => {
@@ -240,24 +311,35 @@ function waitForRecaptcha() {
             return;
         }
         
-        // Wait for script to load
-        let attempts = 0;
-        const maxAttempts = 50; // 5 seconds max wait
-        
-        const checkInterval = setInterval(() => {
-            attempts++;
-            
-            if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
-                clearInterval(checkInterval);
-                grecaptcha.ready(() => {
-                    console.log('reCAPTCHA v3 ready');
-                    resolve();
-                });
-            } else if (attempts >= maxAttempts) {
-                clearInterval(checkInterval);
-                reject(new Error('reCAPTCHA script failed to load'));
-            }
-        }, 100);
+        // Try to load the script
+        loadRecaptchaScript()
+            .then(() => {
+                // Script loaded, now wait for ready
+                if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
+                    grecaptcha.ready(() => {
+                        console.log('reCAPTCHA v3 ready');
+                        resolve();
+                    });
+                } else {
+                    // Wait a bit more
+                    let attempts = 0;
+                    const maxAttempts = 20;
+                    const checkInterval = setInterval(() => {
+                        attempts++;
+                        if (typeof grecaptcha !== 'undefined' && grecaptcha.ready) {
+                            clearInterval(checkInterval);
+                            grecaptcha.ready(() => {
+                                console.log('reCAPTCHA v3 ready');
+                                resolve();
+                            });
+                        } else if (attempts >= maxAttempts) {
+                            clearInterval(checkInterval);
+                            reject(new Error('reCAPTCHA API not available after script load'));
+                        }
+                    }, 100);
+                }
+            })
+            .catch(reject);
     });
 }
 
