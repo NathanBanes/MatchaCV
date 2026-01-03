@@ -683,6 +683,7 @@ document.addEventListener('DOMContentLoaded', function() {
                             const syncFormData = new FormData();
                             syncFormData.append('resumeFile', resumeFileInput.files[0]);
                             syncFormData.append('jobPostingType', jobUrlRadio.checked ? 'url' : 'paste');
+                            syncFormData.append('recaptchaToken', window.recaptchaToken || ''); // Add reCAPTCHA token
                             if (jobUrlRadio.checked) {
                                 syncFormData.append('jobUrl', jobUrlInput.value.trim());
                             } else {
