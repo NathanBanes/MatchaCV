@@ -349,8 +349,16 @@ document.addEventListener('DOMContentLoaded', function() {
             e.stopPropagation();
             e.stopImmediatePropagation();
             
+            console.log('Button clicked, calling handleFormSubmit');
+            console.log('reCAPTCHA token exists:', !!window.recaptchaToken);
+            
             // Call handleFormSubmit (it handles everything including reCAPTCHA)
-            await handleFormSubmit(e);
+            try {
+                await handleFormSubmit(e);
+            } catch (error) {
+                console.error('Error in handleFormSubmit:', error);
+                showError('An error occurred. Please try again.');
+            }
         }, false);
     }
     
