@@ -34,9 +34,9 @@ async function generateAISuggestions(resumeText, jobDescription, jobKeywords, cu
         return [];
     }
     
-    // Limit text length to avoid token limits (keep within reasonable bounds)
-    const resumePreview = resumeText.substring(0, 3000);
-    const jobPreview = jobDescription.substring(0, 2000);
+    // Limit text length to avoid token limits (optimized for faster processing)
+    const resumePreview = resumeText.substring(0, 2000);
+    const jobPreview = jobDescription.substring(0, 1500);
     const technicalKeywords = jobKeywords.technical.slice(0, 20).join(', ');
 
     const prompt = `You are an expert resume and job description analyzer for software engineering, software developmemt, data science, machine learning, and AI. Analyze the following resume and job description to provide specific suggestions to their resume and to give actionable suggestions to better their chance to pass the ATS.'
@@ -95,7 +95,7 @@ Return ONLY valid JSON, no other text.`;
             ],
             temperature: 0.7,
             response_format: { type: "json_object" },
-            max_tokens: 1500
+            max_tokens: 1000
         });
 
         const responseText = completion.choices[0].message.content;
